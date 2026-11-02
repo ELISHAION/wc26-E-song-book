@@ -6,6 +6,9 @@
 <title>The Lord's Church WC 2026 Songs eBook</title>
 <meta name="description" content="Search and read lyrics anywhere. Works offline.">
 <meta name="apple-mobile-web-app-title" content="WC 2026 Songs">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="favicon.png?v=3">
@@ -134,6 +137,31 @@ h2 small{font-family:var(--sans);font-size:13px;color:var(--mut);font-weight:500
 .pn a{flex:1;padding:14px 16px;border:1px solid var(--bd);border-radius:14px;color:var(--ac);font-size:14px;transition:background .2s}.pn a:hover{background:var(--card)}.pn a:last-child{text-align:right}
 main{view-transition-name:page}
 ::view-transition-old(page){animation:.2s ease both fo}::view-transition-new(page){animation:.45s cubic-bezier(.2,.8,.2,1) both rise}
+/* ===== mobile fit hardening ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden}
+body{min-height:100vh;min-height:100dvh;width:100%}
+.col{min-width:0;width:100%}
+main{overflow-x:clip;min-width:0}
+img{max-width:100%}
+.top{gap:10px}
+.brand{min-width:0;flex:1 1 auto;overflow:hidden}
+.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brand img{flex:none}
+.acts{flex:none}
+.ic{display:none}
+.ly,.meta,.rh .t{overflow-wrap:anywhere}
+.rh .t{min-width:0}
+#splash{overflow:hidden;width:100%;height:100vh;height:100dvh}
+@media(max-width:480px){
+.col{padding-left:16px;padding-right:16px}
+.brand{letter-spacing:.12em;font-size:13px;gap:8px}
+.ib{padding:0 12px}
+.lbl{display:none}.ic{display:inline;font-size:18px}
+#share{min-width:42px}
+.hero .panel{padding:26px 14px 22px}
+.hero .sub{font-size:18px}
+}
+@media(max-width:359px){.days button b{font-size:20px}.brand span{display:none}}
 </style>
 </head>
 <body>
@@ -146,8 +174,8 @@ main{view-transition-name:page}
 <a href="#/recent" data-r="recent"><b aria-hidden="true">◷</b>Recent</a>
 </nav>
 <div class="col">
-<header class="top"><a class="brand" href="#/"><img src="lords-church.png" alt="">WC 2026 SONGS</a>
-<div class="acts"><button class="ib" id="inst" hidden>Install</button><button class="ib" id="share" aria-label="Share this app">Share</button><button class="ib" id="theme" aria-label="Toggle theme">◐</button></div></header>
+<header class="top"><a class="brand" href="#/"><img src="lords-church.png" alt=""><span>WC 2026 SONGS</span></a>
+<div class="acts"><button class="ib" id="inst" hidden>Install</button><button class="ib" id="share" aria-label="Share this app"><span class="lbl">Share</span><span class="ic" aria-hidden="true">↗</span></button><button class="ib" id="theme" aria-label="Toggle theme">◐</button></div></header>
 <div id="off" role="status" hidden>You're offline · Your lyrics are still available</div>
 <main id="main" tabindex="-1"><div class="grid" style="margin-top:30px"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></main>
 </div>
