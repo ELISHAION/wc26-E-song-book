@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
+<link rel="preload" href="cormorant-garamond-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="favicon.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -137,6 +138,9 @@ h2 small{font-family:var(--sans);font-size:13px;color:var(--mut);font-weight:500
 .pn a{flex:1;padding:14px 16px;border:1px solid var(--bd);border-radius:14px;color:var(--ac);font-size:14px;transition:background .2s}.pn a:hover{background:var(--card)}.pn a:last-child{text-align:right}
 main{view-transition-name:page}
 ::view-transition-old(page){animation:.2s ease both fo}::view-transition-new(page){animation:.45s cubic-bezier(.2,.8,.2,1) both rise}
+/* ===== Cormorant Garamond Italic (self-hosted, works offline) ===== */
+@font-face{font-family:"Cormorant Garamond";font-style:italic;font-weight:500;font-display:swap;src:url(cormorant-garamond-italic.woff2) format("woff2")}
+.hero .sub{font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-weight:500;font-size:clamp(24px,6vw,30px);line-height:1.25;letter-spacing:.01em}
 /* ===== mobile fit hardening ===== */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden}
 body{min-height:100vh;min-height:100dvh;width:100%}
@@ -159,7 +163,7 @@ img{max-width:100%}
 .lbl{display:none}.ic{display:inline;font-size:18px}
 #share{min-width:42px}
 .hero .panel{padding:26px 14px 22px}
-.hero .sub{font-size:18px}
+.hero .sub{font-size:24px}
 }
 @media(max-width:359px){.days button b{font-size:20px}.brand span{display:none}}
 </style>
