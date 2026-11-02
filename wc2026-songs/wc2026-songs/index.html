@@ -6,7 +6,7 @@
 <title>The Lord's Church WC 2026 Songs eBook</title>
 <meta name="description" content="Search and read lyrics anywhere. Works offline.">
 <meta name="apple-mobile-web-app-title" content="WC 2026 Songs">
-<meta name="theme-color" content="#0a0907">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -80,11 +80,11 @@ h2{font-size:22px;margin:34px 0 14px;letter-spacing:-.01em}
 .ly p{margin:0 0 2em}
 #prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;background:linear-gradient(90deg,var(--ac),var(--ac2))}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:12px 20px;border-radius:14px;background:var(--bg2);border:1px solid var(--bd);z-index:60;font-size:14px;animation:in .25s}
-#splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;color:#f4f3fa;transition:opacity .6s}
-#splash.out{opacity:0;pointer-events:none}.nosplash #splash{display:none}
+#splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;color:#f4f3fa;transition:opacity .6s,transform .6s}
+#splash.out{opacity:0;transform:scale(1.04);pointer-events:none}.nosplash #splash{display:none}
 #splash img{display:block;max-width:100%;height:auto}
-#splash .ch{width:112px;animation:in .8s both}#splash .wc{width:min(320px,78vw);animation:in .8s .25s both}
-#splash p{margin:0;letter-spacing:.3em;font-size:14px;color:#d9b866;font-weight:600;animation:in .8s .5s both}
+#splash .ch{position:absolute;left:0;right:0;margin:0 auto;top:calc(50% - 60px);width:120px;height:120px}#splash .wc{position:absolute;left:0;right:0;margin:0 auto;top:calc(50% + 84px);width:min(320px,78vw);animation:in .9s .35s both}
+#splash p{position:absolute;left:0;right:0;top:calc(50% + 275px);margin:0;letter-spacing:.3em;font-size:14px;color:#d9b866;font-weight:600;animation:in .9s .7s both}
 .event{margin:0 0 10px;color:var(--ac);font-weight:600;letter-spacing:.12em;font-size:13px;text-transform:uppercase}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
