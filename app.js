@@ -141,16 +141,11 @@ function render() {
   main.innerHTML = v(id ? decodeURIComponent(id) : undefined);
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (name === 'song' ? 'home' : name)));
   $('#prog').style.width = 0;
-  if (name !== 'search' || !$('#q')) window.scrollTo(0, 0);
+  if (name !== 'search' || !$('#q')) window.scrollTo({ top: 0, behavior: 'instant' });
   if (name === 'search') wireSearch();
   if (name === 'home') wireDays();
 }
-let started = false;
-function route() {
-  const go = () => render();
-  if (started && document.startViewTransition && !matchMedia('(prefers-reduced-motion:reduce)').matches) document.startViewTransition(go); else go();
-  started = true;
-}
+function route() { render(); }
 addEventListener('scroll', () => {
   if (!location.hash.startsWith('#/song/')) return;
   const h = document.documentElement; const m = h.scrollHeight - innerHeight;
@@ -176,13 +171,14 @@ const net = () => { $('#off').hidden = navigator.onLine; };
 addEventListener('online', net); addEventListener('offline', net); net();
 
 /* ---------- splash ---------- */
+let ready; const loaded = new Promise(r => ready = r);
 const sp = $('#splash');
 if (sp && !document.documentElement.classList.contains('nosplash')) {
   document.documentElement.classList.add('ready');
   const hide = () => { sp.classList.add('out'); setTimeout(() => sp.remove(), 900); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
-  sp.onclick = hide; setTimeout(hide, 3300);
+  sp.onclick = hide; setTimeout(() => loaded.then(hide), 3300);
 }
 /* ---------- boot ---------- */
-loadSongs().then(route).catch(() => { main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.'); });
+loadSongs().then(route).finally(ready).catch(() => { main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.'); });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
