@@ -35,8 +35,8 @@ const heart = '<svg viewBox="0 0 24 24"><path d="M12 21C5 16.500 2 13 2 9a5 5 0 
 const isFav = id => favs.includes(id);
 const cover = s => `background:radial-gradient(circle at 25% 20%,hsl(45 85% 72%/.45),transparent 55%),linear-gradient(145deg,hsl(${34 + s.cover % 18} 60% 42%),hsl(${22 + s.cover % 14} 55% 15%))`;
 const favBtn = id => `<button class="fav${isFav(id) ? ' on' : ''}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="Favorite">${heart}</button>`;
-const card = s => `<article class="card"><a href="#/song/${s.id}" class="art" style="${cover(s)}" aria-hidden="true" tabindex="-1">${esc([...s.title][0])}</a><a href="#/song/${s.id}" class="meta"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small><i>${esc(s.category)}</i></a>${favBtn(s.id)}</article>`;
-const grid = a => `<div class="grid">${a.map(card).join('')}</div>`;
+const card = (s, i = 0) => `<article class="card" style="--i:${Math.min(i, 12)}"><a href="#/song/${s.id}" class="art" style="${cover(s)}" aria-hidden="true" tabindex="-1">${esc([...s.title][0])}</a><a href="#/song/${s.id}" class="meta"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small><i>Day ${s.day || 1} · ${esc(s.category)}</i></a>${favBtn(s.id)}</article>`;
+const grid = a => `<div class="grid">${a.map((s, i) => card(s, i)).join('')}</div>`;
 const empty = (em, t, d) => `<div class="empty"><span class="em" aria-hidden="true">${em}</span><b>${t}</b>${d}</div>`;
 const searchBox = v => `<label class="sb"><span aria-hidden="true">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search songs, artists..." aria-label="Search songs" value="${esc(v)}">${v ? '<button id="clr" aria-label="Clear search">✕</button>' : ''}</label>`;
 function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2200); }
@@ -50,14 +50,32 @@ function toggleFav(id) {
 }
 function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0, 20); LS.s('recent', recent); }
 
+/* ---------- day helpers ---------- */
+const dayHead = d => `Day ${d} <small>${songs.filter(s => (s.day || 1) === d).length} songs</small>`;
+const dayEmpty = d => empty('♪', `Day ${d} songs coming soon`, 'They will appear here as soon as they are added.');
+function wireDays() {
+  const box = $('.days'); if (!box) return;
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const d = +b.dataset.d, prev = LS.g('day', 1); if (d === prev) return;
+    LS.s('day', d);
+    box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    $('.ind').style.transform = `translateX(${(d - 1) * 100}%)`;
+    const l = songs.filter(s => (s.day || 1) === d), dl = $('#dl');
+    $('#dh').innerHTML = dayHead(d);
+    dl.classList.remove('sl', 'sr'); void dl.offsetWidth;
+    dl.innerHTML = l.length ? grid(l) : dayEmpty(d);
+    dl.classList.add(d > prev ? 'sl' : 'sr');
+  });
+}
 /* ---------- views ---------- */
 const views = {
   home() {
-    const fv = favs.map(i => by[i]).filter(Boolean);
+    const N = Math.max(5, ...songs.map(s => s.day || 1)), cur = Math.min(LS.g('day', 1), N);
+    const l = songs.filter(s => (s.day || 1) === cur);
     return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
-<h2>Songbook <small>${songs.length} songs</small></h2>${grid(songs)}
-${fv.length ? `<h2>Your Favorites <small>${fv.length}</small></h2>${grid(fv)}` : ''}`;
+<div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}"><small>DAY</small><b>${i + 1}</b></button>`).join('')}</div>
+<h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
   },
   search() {
     return `<div style="padding-top:24px">${searchBox('')}</div><div id="res"></div>`;
@@ -75,15 +93,17 @@ ${fv.length ? `<h2>Your Favorites <small>${fv.length}</small></h2>${grid(fv)}` :
     if (!s) return empty('♪', 'Song not found', '<a href="#/" style="color:var(--ac)">Back to home</a>');
     pushRecent(id);
     const keys = Object.keys(s.lyrics);
+    const sib = songs.filter(x => (x.day || 1) === (s.day || 1)), si = sib.findIndex(x => x.id === id), pv = sib[si - 1], nx = sib[si + 1];
     let k = LS.g('lang', keys[0]); if (!keys.includes(k)) k = keys[0];
     const body = k => s.lyrics[k].split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
     setTimeout(() => {
       const ly = $('#ly');
       document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { LS.s('lang', b.dataset.k); ly.innerHTML = body(b.dataset.k); document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); });
     });
-    return `<div class="rh"><button class="ib" onclick="history.length>1?history.back():location.hash='#/'" aria-label="Back">←</button><div class="t"><h1>${esc(s.title)}</h1><small>${esc(s.artist)} · ${esc(s.album)}</small></div>${favBtn(id).replace('class="fav', 'class="ib fav').replace(/position:absolute/, '')}</div>
+    return `<div class="rh"><button class="ib" onclick="history.length>1?history.back():location.hash='#/'" aria-label="Back">←</button><div class="t"><h1>${esc(s.title)}</h1><small>Day ${s.day || 1} · ${esc(s.artist)}</small></div>${favBtn(id).replace('class="fav', 'class="ib fav').replace(/position:absolute/, '')}</div>
 ${keys.length > 1 ? `<div class="tabs" role="tablist">${keys.map(x => `<button data-k="${x}" role="tab" class="${x === k ? 'on' : ''}">${LABEL[x] || x}</button>`).join('')}</div>` : ''}
-<div class="ly" id="ly">${body(k)}</div>`;
+<div class="ly" id="ly">${body(k)}</div>
+<nav class="pn" aria-label="Songs on this day">${pv ? `<a href="#/song/${pv.id}">← ${esc(pv.title)}</a>` : '<span></span>'}${nx ? `<a href="#/song/${nx.id}">${esc(nx.title)} →</a>` : ''}</nav>`;
   }
 };
 
@@ -113,7 +133,7 @@ document.addEventListener('click', e => {
 });
 
 /* ---------- router ---------- */
-function route() {
+function render() {
   const [, r = '', id] = location.hash.slice(1).split('/');
   const name = r || 'home';
   const v = views[name] || views.home;
@@ -123,6 +143,13 @@ function route() {
   $('#prog').style.width = 0;
   if (name !== 'search' || !$('#q')) window.scrollTo(0, 0);
   if (name === 'search') wireSearch();
+  if (name === 'home') wireDays();
+}
+let started = false;
+function route() {
+  const go = () => render();
+  if (started && document.startViewTransition && !matchMedia('(prefers-reduced-motion:reduce)').matches) document.startViewTransition(go); else go();
+  started = true;
 }
 addEventListener('scroll', () => {
   if (!location.hash.startsWith('#/song/')) return;
