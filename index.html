@@ -6,10 +6,10 @@
 <title>The Lord's Church WC 2026 Songs eBook</title>
 <meta name="description" content="Search and read lyrics anywhere. Works offline.">
 <meta name="apple-mobile-web-app-title" content="WC 2026 Songs">
-<meta name="theme-color" content="#0a0907">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="favicon.png?v=3">
+<link rel="apple-touch-icon" href="icon-192.png?v=3">
 <script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem('wc26_theme'))||'dark'}catch(e){}setTimeout(function(){var s=document.getElementById("splash");s&&s.remove()},4500);try{sessionStorage.getItem("wc26_splash")&&document.documentElement.classList.add("nosplash")}catch(e){}</script>
 <style>
 :root{--bg:#0a0907;--bg2:#14141f;--card:rgba(255,255,255,.06);--bd:rgba(255,255,255,.09);--tx:#f4f3fa;--mut:#9d9bb0;--ac:#a78bfa;--ac2:#f472b6;--r:20px;--sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--te:"Noto Sans Telugu","Nirmala UI","Gautami",var(--sans)}
@@ -80,11 +80,11 @@ h2{font-size:22px;margin:34px 0 14px;letter-spacing:-.01em}
 .ly p{margin:0 0 2em}
 #prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;background:linear-gradient(90deg,var(--ac),var(--ac2))}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:12px 20px;border-radius:14px;background:var(--bg2);border:1px solid var(--bd);z-index:60;font-size:14px;animation:in .25s}
-#splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;color:#f4f3fa;transition:opacity .6s}
-#splash.out{opacity:0;pointer-events:none}.nosplash #splash{display:none}
+#splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;color:#f4f3fa;transition:opacity .6s,transform .6s}
+#splash.out{opacity:0;transform:scale(1.04);pointer-events:none}.nosplash #splash{display:none}
 #splash img{display:block;max-width:100%;height:auto}
-#splash .ch{width:112px;animation:in .8s both}#splash .wc{width:min(320px,78vw);animation:in .8s .25s both}
-#splash p{margin:0;letter-spacing:.3em;font-size:14px;color:#d9b866;font-weight:600;animation:in .8s .5s both}
+#splash .ch{position:absolute;left:0;right:0;margin:0 auto;top:calc(50% - 60px);width:120px;height:120px}#splash .wc{position:absolute;left:0;right:0;margin:0 auto;top:calc(50% + 84px);width:min(320px,78vw);animation:in .9s .35s both}
+#splash p{position:absolute;left:0;right:0;top:calc(50% + 275px);margin:0;letter-spacing:.3em;font-size:14px;color:#d9b866;font-weight:600;animation:in .9s .7s both}
 .event{margin:0 0 10px;color:var(--ac);font-weight:600;letter-spacing:.12em;font-size:13px;text-transform:uppercase}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
@@ -119,6 +119,21 @@ h2 small{font-family:var(--sans);font-size:13px;color:var(--mut);font-weight:500
 .sb{border-radius:16px}
 .hero .panel p{max-width:none;margin-left:auto;margin-right:auto;text-align:center}
 .hero .panel img{display:block;margin:0 auto}
+/* ===== day-wise layout + motion ===== */
+.days{position:sticky;top:68px;z-index:12;display:grid;grid-template-columns:repeat(5,1fr);padding:4px;margin:22px 0 0;border-radius:18px;background:color-mix(in srgb,var(--bg2) 82%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--bd)}
+.days .ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/5);border-radius:14px;background:linear-gradient(160deg,var(--ac2),var(--ac));transition:transform .5s cubic-bezier(.3,1.25,.4,1);box-shadow:0 8px 24px -8px var(--ac)}
+.days button{position:relative;z-index:1;padding:9px 0;display:flex;flex-direction:column;align-items:center;color:var(--mut);transition:color .3s}
+.days button small{font-size:10px;letter-spacing:.22em}.days button b{font-family:var(--serif);font-size:24px;line-height:1.1}
+.days button.on{color:#0a0907}
+.sl{animation:slL .5s cubic-bezier(.2,.8,.2,1)}.sr{animation:slR .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes slL{from{opacity:0;transform:translateX(40px)}}@keyframes slR{from{opacity:0;transform:translateX(-40px)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes fo{to{opacity:0;transform:translateY(-6px)}}
+.card{animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*55ms)}
+.pn{display:flex;justify-content:space-between;gap:12px;max-width:640px;margin:44px auto 0}
+.pn a{flex:1;padding:14px 16px;border:1px solid var(--bd);border-radius:14px;color:var(--ac);font-size:14px;transition:background .2s}.pn a:hover{background:var(--card)}.pn a:last-child{text-align:right}
+main{view-transition-name:page}
+::view-transition-old(page){animation:.2s ease both fo}::view-transition-new(page){animation:.45s cubic-bezier(.2,.8,.2,1) both rise}
 </style>
 </head>
 <body>
