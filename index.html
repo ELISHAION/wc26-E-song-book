@@ -119,6 +119,21 @@ h2 small{font-family:var(--sans);font-size:13px;color:var(--mut);font-weight:500
 .sb{border-radius:16px}
 .hero .panel p{max-width:none;margin-left:auto;margin-right:auto;text-align:center}
 .hero .panel img{display:block;margin:0 auto}
+/* ===== day-wise layout + motion ===== */
+.days{position:sticky;top:68px;z-index:12;display:grid;grid-template-columns:repeat(5,1fr);padding:4px;margin:22px 0 0;border-radius:18px;background:color-mix(in srgb,var(--bg2) 82%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--bd)}
+.days .ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/5);border-radius:14px;background:linear-gradient(160deg,var(--ac2),var(--ac));transition:transform .5s cubic-bezier(.3,1.25,.4,1);box-shadow:0 8px 24px -8px var(--ac)}
+.days button{position:relative;z-index:1;padding:9px 0;display:flex;flex-direction:column;align-items:center;color:var(--mut);transition:color .3s}
+.days button small{font-size:10px;letter-spacing:.22em}.days button b{font-family:var(--serif);font-size:24px;line-height:1.1}
+.days button.on{color:#0a0907}
+.sl{animation:slL .5s cubic-bezier(.2,.8,.2,1)}.sr{animation:slR .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes slL{from{opacity:0;transform:translateX(40px)}}@keyframes slR{from{opacity:0;transform:translateX(-40px)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes fo{to{opacity:0;transform:translateY(-6px)}}
+.card{animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*55ms)}
+.pn{display:flex;justify-content:space-between;gap:12px;max-width:640px;margin:44px auto 0}
+.pn a{flex:1;padding:14px 16px;border:1px solid var(--bd);border-radius:14px;color:var(--ac);font-size:14px;transition:background .2s}.pn a:hover{background:var(--card)}.pn a:last-child{text-align:right}
+main{view-transition-name:page}
+::view-transition-old(page){animation:.2s ease both fo}::view-transition-new(page){animation:.45s cubic-bezier(.2,.8,.2,1) both rise}
 </style>
 </head>
 <body>
