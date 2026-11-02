@@ -72,7 +72,7 @@ const views = {
   home() {
     const N = Math.max(5, ...songs.map(s => s.day || 1)), cur = Math.min(LS.g('day', 1), N);
     const l = songs.filter(s => (s.day || 1) === cur);
-    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">All your lyrics, completely offline.</p></div>
+    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 <div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}"><small>DAY</small><b>${i + 1}</b></button>`).join('')}</div>
 <h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
@@ -178,8 +178,9 @@ addEventListener('online', net); addEventListener('offline', net); net();
 /* ---------- splash ---------- */
 const sp = $('#splash');
 if (sp && !document.documentElement.classList.contains('nosplash')) {
-  const hide = () => { sp.classList.add('out'); setTimeout(() => sp.remove(), 700); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
-  sp.onclick = hide; setTimeout(hide, 2600);
+  document.documentElement.classList.add('ready');
+  const hide = () => { sp.classList.add('out'); setTimeout(() => sp.remove(), 900); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
+  sp.onclick = hide; setTimeout(hide, 3300);
 }
 /* ---------- boot ---------- */
 loadSongs().then(route).catch(() => { main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.'); });
