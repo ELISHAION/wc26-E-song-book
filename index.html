@@ -173,6 +173,23 @@ img{max-width:100%}
 @keyframes chup{to{transform:translateY(-27vh) scale(.5)}}
 #splash .wc{top:calc(50% - 30px);margin-top:0;animation:in .9s 1.0s both}
 #splash p{top:calc(50% + 150px);animation:in .9s 1.4s both}
+/* ===== sign-in + greeting ===== */
+#login{position:fixed;inset:0;z-index:90;overflow-y:auto;background:var(--bg);background-image:radial-gradient(80vw 50vh at 50% -10%,color-mix(in srgb,var(--ac) 22%,transparent),transparent);display:flex;padding:24px 18px}
+#login .lg{margin:auto;width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px;animation:pg .5s both}
+#login img{width:84px;height:84px;border-radius:20px;align-self:center}
+#login h1{font-family:var(--serif);font-size:32px;text-align:center;margin:4px 0 0}
+#login .lead{margin:0 0 6px;text-align:center;color:var(--mut);line-height:1.5;font-size:15px}
+#login label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mut);letter-spacing:.04em}
+#login input{height:52px;padding:0 16px;border-radius:14px;background:var(--card);border:1px solid var(--bd);color:var(--tx);font:inherit;font-size:17px;outline:0;transition:border-color .2s,box-shadow .2s;width:100%}
+#login input:focus{border-color:var(--ac);box-shadow:0 0 0 4px color-mix(in srgb,var(--ac) 20%,transparent)}
+#login .err{min-height:20px;margin:0;color:#ff8a7a;font-size:14px;text-align:center}
+#login .go{height:54px;border-radius:16px;background:linear-gradient(160deg,var(--ac2),var(--ac));color:#0a0907;font-weight:700;font-size:17px;letter-spacing:.04em;transition:transform .15s,opacity .2s}
+#login .go:active{transform:scale(.97)}#login .go:disabled{opacity:.6}
+#greet{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 2px 0}
+#greet div{display:flex;flex-direction:column;min-width:0}
+#greet b{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#greet span{font-family:"Cormorant Garamond",var(--serif);font-style:italic;color:var(--ac);font-size:21px;line-height:1.2}
+#greet button{flex:none;font-size:12px;color:var(--mut);padding:10px 4px}
 </style>
 </head>
 <body>
@@ -188,8 +205,10 @@ img{max-width:100%}
 <header class="top"><a class="brand" href="#/"><img src="lords-church.png" alt=""><span>WC 2026 SONGS</span></a>
 <div class="acts"><button class="ib" id="inst" hidden>Install</button><button class="ib" id="share" aria-label="Share this app"><span class="lbl">Share</span><span class="ic" aria-hidden="true">↗</span></button><button class="ib" id="theme" aria-label="Toggle theme">◐</button></div></header>
 <div id="off" role="status" hidden>You're offline · Your lyrics are still available</div>
+<div id="greet" hidden></div>
 <main id="main" tabindex="-1"><div class="grid" style="margin-top:30px"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></main>
 </div>
+<script src="config.js"></script>
 <script src="app.js" defer></script>
 </body>
 </html>
