@@ -72,7 +72,7 @@ const views = {
   home() {
     const N = Math.max(5, ...songs.map(s => s.day || 1)), cur = Math.min(LS.g('day', 1), N);
     const l = songs.filter(s => (s.day || 1) === cur);
-    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">All your lyrics, completely offline.</p></div>
+    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 <div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}"><small>DAY</small><b>${i + 1}</b></button>`).join('')}</div>
 <h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
@@ -144,6 +144,7 @@ function render() {
   if (name !== 'search' || !$('#q')) window.scrollTo({ top: 0, behavior: 'instant' });
   if (name === 'search') wireSearch();
   if (name === 'home') wireDays();
+  renderGreet();
 }
 function route() { render(); }
 addEventListener('scroll', () => {
@@ -170,6 +171,54 @@ $('#inst').onclick = async () => { if (!dip) return; dip.prompt(); await dip.use
 const net = () => { $('#off').hidden = navigator.onLine; };
 addEventListener('online', net); addEventListener('offline', net); net();
 
+/* ---------- sign-in (Google Sheet via Apps Script) + greeting ---------- */
+const API = (window.WC_API || '').trim();
+let user = LS.g('user', null);
+const hello = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
+function renderGreet() {
+  const g = $('#greet'); if (!g) return;
+  if (!user) { g.hidden = true; return; }
+  g.hidden = false;
+  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><button id="out" type="button">Sign out</button>`;
+}
+async function signIn(d) {
+  if (!API) return { ok: true, username: d.username, local: true };
+  if (!navigator.onLine) return { ok: false, error: 'offline' };
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 20000);
+  try {
+    const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(d), signal: ac.signal });
+    return await r.json();
+  } catch { return { ok: false, error: 'network' }; } finally { clearTimeout(tm); }
+}
+const MSG = { invalid: 'Please check your details.', wrong_password: 'This phone number is already registered. Wrong password.', offline: 'Connect to the internet once to sign in.', network: 'Could not reach the server. Please try again.', server: 'Something went wrong. Please try again.' };
+function showLogin() {
+  if ($('#login')) return;
+  const el = document.createElement('div'); el.id = 'login';
+  el.innerHTML = `<form class="lg" novalidate><img src="lords-church.png" alt=""><h1>Welcome</h1><p class="lead">Praise the Lord! Sign in once to open the Worship Conference 2026 songbook.</p>
+<label>Username<input name="u" autocomplete="username" maxlength="40" required></label>
+<label>Phone number<input name="p" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="10-digit mobile number" required></label>
+<label>Location<input name="l" autocomplete="address-level2" maxlength="60" placeholder="City / Town" required></label>
+<label>Password<input name="w" type="password" autocomplete="current-password" maxlength="40" placeholder="At least 4 characters" required></label>
+<p class="err" role="alert"></p><button class="go" type="submit">Continue</button></form>`;
+  document.body.append(el);
+  const f = $('form', el), err = $('.err', el), go = $('.go', el);
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = n => f.elements[n].value.trim();
+    const d = { username: v('u'), phone: v('p').replace(/\D/g, '').slice(-10), location: v('l'), password: f.elements.w.value };
+    if (d.username.length < 2) return err.textContent = 'Enter your name.';
+    if (d.phone.length < 10) return err.textContent = 'Enter a valid 10-digit phone number.';
+    if (!d.location) return err.textContent = 'Enter your location.';
+    if (d.password.length < 4) return err.textContent = 'Password must be at least 4 characters.';
+    err.textContent = ''; go.disabled = true; go.textContent = 'Please wait…';
+    const r = await signIn(d);
+    if (!r.ok) { err.textContent = MSG[r.error] || MSG.server; go.disabled = false; go.textContent = 'Continue'; return; }
+    user = { username: r.username || d.username, phone: d.phone }; LS.s('user', user);
+    el.remove(); renderGreet(); toast('Praise the Lord, ' + user.username + '!');
+  };
+}
+document.addEventListener('click', e => { if (e.target.id === 'out' && confirm('Sign out from this device?')) { user = null; LS.s('user', null); renderGreet(); showLogin(); } });
+setInterval(renderGreet, 300000);
 /* ---------- splash ---------- */
 let ready; const loaded = new Promise(r => ready = r);
 const sp = $('#splash');
@@ -179,6 +228,7 @@ if (sp && !document.documentElement.classList.contains('nosplash')) {
   sp.onclick = hide; setTimeout(() => loaded.then(hide), 3300);
 }
 /* ---------- boot ---------- */
+if (!user) showLogin(); else renderGreet();
 loadSongs().then(route).finally(ready).catch(() => { main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.'); });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
