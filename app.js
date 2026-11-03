@@ -190,26 +190,24 @@ async function signIn(d) {
     return await r.json();
   } catch { return { ok: false, error: 'network' }; } finally { clearTimeout(tm); }
 }
-const MSG = { invalid: 'Please check your details.', wrong_password: 'This phone number is already registered. Wrong password.', offline: 'Connect to the internet once to sign in.', network: 'Could not reach the server. Please try again.', server: 'Something went wrong. Please try again.' };
+const MSG = { invalid: 'Please check your details.', email_used: 'This email is already registered with a different phone number.', offline: 'Connect to the internet once to sign in.', network: 'Could not reach the server. Please try again.', server: 'Something went wrong. Please try again.' };
 function showLogin() {
   if ($('#login')) return;
   const el = document.createElement('div'); el.id = 'login';
   el.innerHTML = `<form class="lg" novalidate><img src="lords-church.png" alt=""><h1>Welcome</h1><p class="lead">Praise the Lord! Sign in once to open the Worship Conference 2026 songbook.</p>
 <label>Username<input name="u" autocomplete="username" maxlength="40" required></label>
 <label>Phone number<input name="p" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="10-digit mobile number" required></label>
-<label>Location<input name="l" autocomplete="address-level2" maxlength="60" placeholder="City / Town" required></label>
-<label>Password<input name="w" type="password" autocomplete="current-password" maxlength="40" placeholder="At least 4 characters" required></label>
+<label>Email<input name="e" type="email" inputmode="email" autocomplete="email" maxlength="80" placeholder="you@example.com" required></label>
 <p class="err" role="alert"></p><button class="go" type="submit">Continue</button></form>`;
   document.body.append(el);
   const f = $('form', el), err = $('.err', el), go = $('.go', el);
   f.onsubmit = async e => {
     e.preventDefault();
     const v = n => f.elements[n].value.trim();
-    const d = { username: v('u'), phone: v('p').replace(/\D/g, '').slice(-10), location: v('l'), password: f.elements.w.value };
+    const d = { username: v('u'), phone: v('p').replace(/\D/g, '').slice(-10), email: v('e').toLowerCase() };
     if (d.username.length < 2) return err.textContent = 'Enter your name.';
     if (d.phone.length < 10) return err.textContent = 'Enter a valid 10-digit phone number.';
-    if (!d.location) return err.textContent = 'Enter your location.';
-    if (d.password.length < 4) return err.textContent = 'Password must be at least 4 characters.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) return err.textContent = 'Enter a valid email address.';
     err.textContent = ''; go.disabled = true; go.textContent = 'Please wait…';
     const r = await signIn(d);
     if (!r.ok) { err.textContent = MSG[r.error] || MSG.server; go.disabled = false; go.textContent = 'Continue'; return; }
