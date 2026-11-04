@@ -230,6 +230,6 @@ if (sp && !document.documentElement.classList.contains('nosplash')) {
 }
 /* ---------- boot ---------- */
 if (!user) showLogin(); else renderGreet();
-loadSongs().then(route).finally(ready).catch(() => { main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.'); });
+loadSongs().then(route).finally(ready).catch(e => { const why = esc((e && e.message) || 'unknown error'); main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.<br><small style="opacity:.6">Reason: ' + why + '</small>'); });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
