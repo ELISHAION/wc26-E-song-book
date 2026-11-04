@@ -14,9 +14,30 @@ let favs = LS.g('favs', []), recent = LS.g('recent', []);
 const LABEL = { te: 'తెలుగు', rom: 'English', en: 'Lyrics' };
 
 /* ---------- song data layer (only place that knows about songs.json) ---------- */
+function repairJson(t) {   // forgives the usual hand-editing slips: raw line breaks/tabs inside lyrics, trailing commas, BOM
+  let o = '', inStr = false, esc = false;
+  for (const c of t.replace(/^\uFEFF/, '')) {
+    if (!inStr) { if (c === '"') inStr = true; o += c; continue; }
+    if (esc) { o += c; esc = false; }
+    else if (c === '\\') { o += c; esc = true; }
+    else if (c === '"') { o += c; inStr = false; }
+    else if (c === '\n') o += '\\n';
+    else if (c === '\r') { /* drop */ }
+    else if (c === '\t') o += '\\t';
+    else if (c < ' ') o += ' ';
+    else o += c;
+  }
+  return o;
+}
+function parseSongs(t) {
+  try { return JSON.parse(t); } catch {}
+  const fixed = repairJson(t);
+  try { return JSON.parse(fixed); } catch {}
+  return JSON.parse(fixed.replace(/,(\s*[\]}])/g, '$1'));
+}
 async function loadSongs() {
   const r = await fetch('songs.json');
-  const all = await r.json();
+  const all = parseSongs(await r.text());
   try { DATES = (await (await fetch('days.json')).json()).dates || {}; } catch { DATES = {}; }
   songs = all;
   by = Object.fromEntries(songs.map(s => [s.id, s]));
