@@ -9,14 +9,16 @@ const LS = {
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const main = $('#main');
-let songs = [], by = {}, index = [];
+let songs = [], by = {}, index = [], DATES = {};
 let favs = LS.g('favs', []), recent = LS.g('recent', []);
 const LABEL = { te: 'తెలుగు', rom: 'English', en: 'Lyrics' };
 
 /* ---------- song data layer (only place that knows about songs.json) ---------- */
 async function loadSongs() {
   const r = await fetch('songs.json');
-  songs = await r.json();
+  const all = await r.json();
+  try { DATES = (await (await fetch('days.json')).json()).dates || {}; } catch { DATES = {}; }
+  songs = all;
   by = Object.fromEntries(songs.map(s => [s.id, s]));
   index = songs.map(s => ({
     s, h: [s.title, s.artist, s.album, s.category, s.language, (s.tags || []).join(' '), Object.values(s.lyrics).join(' ')].join(' ').toLowerCase()
@@ -51,8 +53,9 @@ function toggleFav(id) {
 function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0, 20); LS.s('recent', recent); }
 
 /* ---------- day helpers ---------- */
-const dayHead = d => `Day ${d} <small>${songs.filter(s => (s.day || 1) === d).length} songs</small>`;
-const dayEmpty = d => empty('♪', `Day ${d} songs coming soon`, 'They will appear here as soon as they are added.');
+const dayN = d => songs.filter(s => (s.day || 1) === d).length;
+const dayHead = d => `Day ${d}${DATES[d] ? ` <small>· ${esc(DATES[d])}</small>` : ''} <small>${dayN(d) ? dayN(d) + ' songs' : 'Not started yet'}</small>`;
+const dayEmpty = d => empty('♪', `Day ${d} hasn't started yet`, 'Songs will appear here when this day begins. Please check back soon!');
 function wireDays() {
   const box = $('.days'); if (!box) return;
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -74,7 +77,7 @@ const views = {
     const l = songs.filter(s => (s.day || 1) === cur);
     return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
-<div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}"><small>DAY</small><b>${i + 1}</b></button>`).join('')}</div>
+<div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}${dayN(i + 1) ? '' : ' soon'}"><small>DAY</small><b>${i + 1}</b>${DATES[i + 1] ? `<em>${esc(DATES[i + 1])}</em>` : ''}</button>`).join('')}</div>
 <h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
   },
   search() {
