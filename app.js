@@ -96,7 +96,7 @@ const views = {
   home() {
     const N = Math.max(5, ...songs.map(s => s.day || 1)), cur = Math.min(LS.g('day', 1), N);
     const l = songs.filter(s => (s.day || 1) === cur);
-    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">All your lyrics in offline.</p></div>
+    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 <div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}${dayN(i + 1) ? '' : ' soon'}"><small>DAY</small><b>${i + 1}</b>${DATES[i + 1] ? `<em>${esc(DATES[i + 1])}</em>` : ''}</button>`).join('')}</div>
 <h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
@@ -205,16 +205,27 @@ function renderGreet() {
   g.hidden = false;
   g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><button id="out" type="button">Sign out</button>`;
 }
-async function signIn(d) {
+async function signIn(d, tries = 2) {
   if (!API) return { ok: true, username: d.username, local: true };
   if (!navigator.onLine) return { ok: false, error: 'offline' };
-  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 20000);
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 25000);
   try {
     const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(d), signal: ac.signal });
-    return await r.json();
-  } catch { return { ok: false, error: 'network' }; } finally { clearTimeout(tm); }
+    try { return await r.json(); } catch { return { ok: false, error: 'server' }; }
+  } catch (e) {
+    if (tries > 1 && e.name !== 'AbortError') { await new Promise(res => setTimeout(res, 1500)); return signIn(d, tries - 1); }   // one quiet retry (safe: same phone never creates a 2nd row)
+    return { ok: false, error: e.name === 'AbortError' ? 'timeout' : (navigator.onLine ? 'network' : 'offline') };
+  } finally { clearTimeout(tm); }
 }
-const MSG = { invalid: 'Please check your details.', email_used: 'This email is already registered with a different phone number.', offline: 'Connect to the internet once to sign in.', network: 'Could not reach the server. Please try again.', server: 'Something went wrong. Please try again.' };
+const MSG = {
+  invalid: 'Please check your details.',
+  email_used: 'This email is already registered with a different phone number.',
+  offline: 'No internet connection. Please turn on Wi-Fi or mobile data and try again.',
+  network: 'Network problem. Please check your internet connection (Wi-Fi or mobile data) and try again.',
+  timeout: 'Your connection is slow. Please wait a moment and try again.',
+  server: 'Our server is busy right now. Please try again in a minute.'
+};
+addEventListener('online', () => { const e = $('#login .err'); if (e) e.textContent = ''; });
 function showLogin() {
   if ($('#login')) return;
   const el = document.createElement('div'); el.id = 'login';
