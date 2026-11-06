@@ -190,6 +190,18 @@ img{max-width:100%}
 #greet b{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #greet span{font-family:"Cormorant Garamond",var(--serif);font-style:italic;color:var(--ac);font-size:21px;line-height:1.2}
 #greet button{flex:none;font-size:12px;color:var(--mut);padding:10px 4px}
+.days em{font-style:normal;font-size:9px;letter-spacing:.03em;opacity:.8;margin-top:1px;white-space:nowrap}
+.days button.soon:not(.on){opacity:.5}
+/* ===== collapsible video ===== */
+.vb{display:flex;justify-content:flex-end;margin-top:10px}
+.vlink{display:inline-flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.06em;color:var(--ac);padding:8px 2px;transition:opacity .2s}
+.vlink:hover{opacity:.8}
+.vwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s cubic-bezier(.2,.8,.2,1)}
+.vwrap.open{grid-template-rows:1fr}
+.vin{min-height:0;overflow:hidden;opacity:0;transition:opacity .4s}
+.vwrap.open .vin{opacity:1}
+.vin video{display:block;width:100%;max-height:min(70vh,560px);background:#000;border-radius:18px;margin-top:4px;object-fit:contain;border:1px solid var(--bd)}
+.vfoot{display:flex;justify-content:flex-end;margin-top:2px}
 </style>
 </head>
 <body>
