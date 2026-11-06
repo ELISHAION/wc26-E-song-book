@@ -77,6 +77,17 @@ function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0
 const dayN = d => songs.filter(s => (s.day || 1) === d).length;
 const dayHead = d => `Day ${d}${DATES[d] ? ` <small>· ${esc(DATES[d])}</small>` : ''} <small>${dayN(d) ? dayN(d) + ' songs' : 'Not started yet'}</small>`;
 const dayEmpty = d => empty('♪', `Day ${d} hasn't started yet`, 'Songs will appear here when this day begins. Please check back soon!');
+function wireVideo() {
+  const t = $('#vtoggle'), w = $('#vwrap'), v = $('#wcv'); if (!t || !w || !v) return;
+  const set = open => {
+    w.classList.toggle('open', open); w.inert = !open;
+    t.setAttribute('aria-expanded', open);
+    t.innerHTML = open ? 'Hide video <span aria-hidden="true">✕</span>' : '<span aria-hidden="true">▶</span> Watch video';
+    if (open) { if (!v.getAttribute('src')) v.src = v.dataset.src; } else v.pause();   // video only downloads when opened
+  };
+  t.onclick = () => set(!w.classList.contains('open'));
+  $('#vhide').onclick = () => { set(false); t.focus({ preventScroll: true }); };
+}
 function wireDays() {
   const box = $('.days'); if (!box) return;
   box.querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -97,6 +108,8 @@ const views = {
     const N = Math.max(5, ...songs.map(s => s.day || 1)), cur = Math.min(LS.g('day', 1), N);
     const l = songs.filter(s => (s.day || 1) === cur);
     return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
+<div class="vb"><button id="vtoggle" class="vlink" type="button" aria-expanded="false" aria-controls="vwrap"><span aria-hidden="true">▶</span> Watch video</button></div>
+<div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpg" data-src="wc-video.mp4" aria-label="Worship Conference 2026 video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 <div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}${dayN(i + 1) ? '' : ' soon'}"><small>DAY</small><b>${i + 1}</b>${DATES[i + 1] ? `<em>${esc(DATES[i + 1])}</em>` : ''}</button>`).join('')}</div>
 <h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
@@ -167,7 +180,7 @@ function render() {
   $('#prog').style.width = 0;
   if (name !== 'search' || !$('#q')) window.scrollTo({ top: 0, behavior: 'instant' });
   if (name === 'search') wireSearch();
-  if (name === 'home') wireDays();
+  if (name === 'home') { wireDays(); wireVideo(); }
   renderGreet();
 }
 function route() { render(); }
@@ -197,6 +210,7 @@ addEventListener('online', net); addEventListener('offline', net); net();
 
 /* ---------- sign-in (Google Sheet via Apps Script) + greeting ---------- */
 const API = (window.WC_API || '').trim();
+const FB = window.WC_FIREBASE && window.WC_FIREBASE.projectId ? window.WC_FIREBASE : null;   // Firebase config (set by build.js from WC_FIREBASE_CONFIG)
 let user = LS.g('user', null);
 const hello = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 function renderGreet() {
@@ -205,9 +219,50 @@ function renderGreet() {
   g.hidden = false;
   g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><button id="out" type="button">Sign out</button>`;
 }
+/* ---- Firebase (Firestore) sign-in: one document per identical name+phone+email, so duplicates are impossible ---- */
+let fbp = null;
+const loadFirebase = () => window.WC_LOAD_FIREBASE ? window.WC_LOAD_FIREBASE() : (async () => {   // SDK is loaded only when someone signs in
+  const V = 'https://www.gstatic.com/firebasejs/10.14.1/';
+  const [app, fs] = await Promise.all([import(V + 'firebase-app.js'), import(V + 'firebase-firestore.js')]);
+  return { fs, db: fs.initializeFirestore(app.initializeApp(FB), { experimentalAutoDetectLongPolling: true }) };
+})();
+async function sha256Hex(s) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+const fbErr = e => {
+  const c = (e && e.code) || '', m = (e && e.message) || '';
+  if (c === 'deadline-exceeded') return 'timeout';
+  if (c === 'unavailable' || /network|offline|fetch|import/i.test(m)) return navigator.onLine ? 'network' : 'offline';
+  return 'server';
+};
+async function signInFirebase(d, tries = 2) {
+  const timer = new Promise((_, rej) => setTimeout(() => rej({ code: 'deadline-exceeded' }), 25000));
+  const work = (async () => {
+    const id = await sha256Hex(`${d.username.toLowerCase().replace(/\s+/g, ' ').trim()}|${d.phone}|${d.email}`);
+    if (!fbp) fbp = loadFirebase().catch(e => { fbp = null; throw e; });
+    const { fs, db } = await fbp;
+    const ref = fs.doc(db, 'users', id);
+    const bump = () => fs.updateDoc(ref, { lastLogin: fs.serverTimestamp(), logins: fs.increment(1) });
+    try { await bump(); return { ok: true, username: d.username, created: false }; } catch (e) { if (e.code === 'unavailable') throw e; }   // not there yet -> create
+    try {
+      await fs.setDoc(ref, { username: d.username, phone: d.phone, email: d.email, registeredAt: fs.serverTimestamp(), lastLogin: fs.serverTimestamp(), logins: 1 });
+      return { ok: true, username: d.username, created: true };
+    } catch (e) {
+      if (e.code === 'permission-denied') { await bump(); return { ok: true, username: d.username, created: false }; }   // created a moment ago by the same person
+      throw e;
+    }
+  })();
+  try { return await Promise.race([work, timer]); }
+  catch (e) {
+    if (tries > 1 && fbErr(e) === 'network') { await new Promise(r => setTimeout(r, 1500)); return signInFirebase(d, tries - 1); }
+    return { ok: false, error: fbErr(e) };
+  }
+}
 async function signIn(d, tries = 2) {
-  if (!API) return { ok: true, username: d.username, local: true };
+  if (!FB && !API) return { ok: true, username: d.username, local: true };
   if (!navigator.onLine) return { ok: false, error: 'offline' };
+  if (FB) return signInFirebase(d);
   const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 25000);
   try {
     const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(d), signal: ac.signal });
@@ -219,7 +274,9 @@ async function signIn(d, tries = 2) {
 }
 const MSG = {
   invalid: 'Please check your details.',
-  email_used: 'This email is already registered with a different phone number.',
+  invalid_name: 'Please enter your name (at least 2 letters).',
+  invalid_phone: 'Please enter a valid 10-digit phone number.',
+  invalid_email: 'Please enter a valid email address.',
   offline: 'No internet connection. Please turn on Wi-Fi or mobile data and try again.',
   network: 'Network problem. Please check your internet connection (Wi-Fi or mobile data) and try again.',
   timeout: 'Your connection is slow. Please wait a moment and try again.',
