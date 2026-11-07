@@ -1,7 +1,7 @@
-// Vercel build step: copies the site into dist/ and writes dist/config.js from the WC_API_URL environment variable.
+// Vercel build step: copies the site into dist/ and writes dist/config.js from the WC_FIREBASE_CONFIG environment variable.
 const fs = require('fs'), path = require('path');
 const FILES = ['index.html', 'app.js', 'sw.js', 'config.js', 'songs.json', 'days.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
-  'icon-maskable-512.png', 'favicon.png', 'lords-church.png', 'worship-conference.png', 'wc-video.mp4', 'wc-video-poster.jpg', 'cormorant-garamond-italic.woff2'];
+  'icon-maskable-512.png', 'favicon.png', 'lords-church.png', 'worship-conference.png', 'wc-video.mp4', 'wc-video-poster.jpg', 'letter.txt', 'cormorant-garamond-italic.woff2'];
 function repairJson(t) {   // forgives the usual hand-editing slips: raw line breaks/tabs inside lyrics, trailing commas, BOM
   let o = '', inStr = false, esc = false;
   for (const c of t.replace(/^\uFEFF/, '')) {
@@ -33,13 +33,17 @@ if (fbRaw) {
     if (!fb || !fb.apiKey || !fb.projectId || !fb.appId) throw new Error('it must contain apiKey, projectId and appId');
   } catch (e) { console.error('\nERROR: WC_FIREBASE_CONFIG is not valid (' + e.message + '). Paste the firebaseConfig object from Firebase console → Project settings → Your apps.\n'); process.exit(1); }
 }
-if (process.env.VERCEL && !fb && !/^https:\/\/script\.google\.com\/.+/.test(url)) {
-  console.error('\nERROR: set the WC_FIREBASE_CONFIG environment variable in Vercel (Project → Settings → Environment Variables) to your Firebase web config, then redeploy.\n');
+if (url && !/^https:\/\/script\.google\.com\/.+/.test(url)) {
+  console.error('\nERROR: WC_API_URL must be the Apps Script Web app link (https://script.google.com/macros/s/.../exec).\n');
+  process.exit(1);
+}
+if (process.env.VERCEL && !fb && !url) {
+  console.error('\nERROR: set WC_API_URL (Google Sheet) and/or WC_FIREBASE_CONFIG (Firebase) in Vercel (Project → Settings → Environment Variables), then redeploy.\n');
   process.exit(1);
 }
 fs.rmSync('dist', { recursive: true, force: true });
 fs.mkdirSync('dist');
-const OPTIONAL = ['wc-video.mp4', 'wc-video-poster.jpg', 'days.json', 'config.js', 'icon-maskable-512.png', 'cormorant-garamond-italic.woff2'];
+const OPTIONAL = ['letter.txt', 'wc-video.mp4', 'wc-video-poster.jpg', 'days.json', 'config.js', 'icon-maskable-512.png', 'cormorant-garamond-italic.woff2'];
 try {
   const raw = fs.readFileSync('songs.json', 'utf8');
   const s = parseSongs(raw);
@@ -55,4 +59,4 @@ for (const f of FILES) {
 fs.mkdirSync('dist', { recursive: true });
 if (fs.existsSync('songs.fixed.json')) { fs.copyFileSync('songs.fixed.json', 'dist/songs.json'); fs.unlinkSync('songs.fixed.json'); }
 fs.writeFileSync('dist/config.js', `window.WC_API = ${JSON.stringify(url)};\nwindow.WC_FIREBASE = ${JSON.stringify(fb)};\n`);
-console.log('Built dist/ —', fb ? 'sign-in connected to FIREBASE (' + fb.projectId + ')' : url ? 'sign-in connected to Google Sheet' : 'LOCAL MODE (no WC_FIREBASE_CONFIG / WC_API_URL set)');
+console.log('Built dist/ — sign-in saves to:', [url && 'GOOGLE SHEET', fb && 'FIREBASE (' + fb.projectId + ')'].filter(Boolean).join(' + ') || 'NOTHING (local mode)');
