@@ -215,6 +215,28 @@ img{max-width:100%}
 #letter .lx{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;font-size:15px}
 #letter .go{margin-top:14px;height:52px;flex:none;border-radius:16px;background:linear-gradient(160deg,var(--ac2),var(--ac));color:#0a0907;font-weight:700;font-size:16px;letter-spacing:.03em}
 .gb{display:flex;gap:2px;flex:none;align-items:center}
+/* ===== envelope intro for the letter ===== */
+#letter.env{--e-bg:#f5edd1;--e-tab:#ecdeb8;--e-cover:#e6cfa7;--e-sh:rgba(0,0,0,.2);--e-heart:#fc08e7}
+#letter .ew{display:flex;flex-direction:column;align-items:center;gap:56px;animation:lpop .6s cubic-bezier(.2,.8,.2,1) both;transition:opacity .35s}
+#letter.read .ew{display:none}
+#letter .lc{display:none}
+#letter.read .lc{display:flex}
+#letter .eh{margin:0;font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-size:22px;color:#f0d9a0;transition:opacity .4s}
+#letter.flap .eh{opacity:0}
+#letter .envelope-wrapper{background:var(--e-bg);box-shadow:0 0 40px var(--e-sh)}
+#letter .envelope{position:relative;width:300px;height:230px;max-width:100%}
+#letter .envelope::before{content:"";position:absolute;top:0;z-index:2;border-top:130px solid var(--e-tab);border-right:150px solid transparent;border-left:150px solid transparent;transform-origin:top;transition:all .5s ease-in-out .7s}
+#letter .envelope::after{content:"";position:absolute;z-index:2;width:0;height:0;border-top:130px solid transparent;border-right:150px solid var(--e-cover);border-bottom:100px solid var(--e-cover);border-left:150px solid var(--e-cover)}
+#letter .envelope .letter{position:absolute;right:20%;bottom:0;width:54%;height:80%;background:#fff;text-align:center;transition:all 1s ease-in-out;box-shadow:0 0 5px var(--e-sh);padding:20px 10px}
+#letter .envelope .letter .text{font-family:var(--serif);color:#444;text-align:left;font-size:11px;line-height:1.4}
+#letter .heart{position:absolute;top:50%;left:50%;width:15px;height:15px;padding:0;border:0;background:var(--e-heart);z-index:4;transform:translate(-50%,-20%) rotate(-45deg);transition:transform .5s ease-in-out 1s;box-shadow:0 1px 6px var(--e-sh);cursor:pointer;animation:hb 1.2s ease-in-out infinite}
+#letter .heart::before,#letter .heart::after{content:"";position:absolute;width:15px;height:15px;background:var(--e-heart);border-radius:50%}
+#letter .heart::before{top:-7.5px}
+#letter .heart::after{right:-7.5px}
+@keyframes hb{50%{box-shadow:0 0 0 8px rgba(252,8,231,.25)}}
+#letter.flap .envelope::before{transform:rotateX(180deg);z-index:0}
+#letter.flap .envelope .letter{bottom:100px;transform:scale(1.5);transition-delay:1s}
+#letter.flap .heart{transform:rotate(45deg);transition-delay:.4s;animation:none}
 </style>
 </head>
 <body>
