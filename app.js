@@ -209,7 +209,7 @@ const net = () => { $('#off').hidden = navigator.onLine; };
 addEventListener('online', net); addEventListener('offline', net); net();
 
 /* ---------- sign-in (Google Sheet via Apps Script) + greeting ---------- */
-const API = (window.WC_API || '').trim();
+const API = (window.WC_API || '').trim();   // Google Sheet (Apps Script) link - optional while you switch over
 const FB = window.WC_FIREBASE && window.WC_FIREBASE.projectId ? window.WC_FIREBASE : null;   // Firebase config (set by build.js from WC_FIREBASE_CONFIG)
 let user = LS.g('user', null);
 const hello = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
@@ -217,7 +217,7 @@ function renderGreet() {
   const g = $('#greet'); if (!g) return;
   if (!user) { g.hidden = true; return; }
   g.hidden = false;
-  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><button id="out" type="button">Sign out</button>`;
+  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><div class="gb">${LETTER ? '<button id="letterBtn" type="button">✉ Letter</button>' : ''}<button id="out" type="button">Sign out</button></div>`;
 }
 /* ---- Firebase (Firestore) sign-in: one document per identical name+phone+email, so duplicates are impossible ---- */
 let fbp = null;
@@ -259,18 +259,23 @@ async function signInFirebase(d, tries = 2) {
     return { ok: false, error: fbErr(e) };
   }
 }
-async function signIn(d, tries = 2) {
-  if (!FB && !API) return { ok: true, username: d.username, local: true };
-  if (!navigator.onLine) return { ok: false, error: 'offline' };
-  if (FB) return signInFirebase(d);
+async function signInSheet(d, tries = 2) {   // Google Sheet via Apps Script
   const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 25000);
   try {
     const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(d), signal: ac.signal });
     try { return await r.json(); } catch { return { ok: false, error: 'server' }; }
   } catch (e) {
-    if (tries > 1 && e.name !== 'AbortError') { await new Promise(res => setTimeout(res, 1500)); return signIn(d, tries - 1); }   // one quiet retry (safe: same phone never creates a 2nd row)
+    if (tries > 1 && e.name !== 'AbortError') { await new Promise(res => setTimeout(res, 1500)); return signInSheet(d, tries - 1); }   // one quiet retry
     return { ok: false, error: e.name === 'AbortError' ? 'timeout' : (navigator.onLine ? 'network' : 'offline') };
   } finally { clearTimeout(tm); }
+}
+async function signIn(d) {
+  if (!FB && !API) return { ok: true, username: d.username, local: true };    // nothing configured = local test mode
+  if (!navigator.onLine) return { ok: false, error: 'offline' };
+  if (!API) return signInFirebase(d);                                          // Firebase only (after the Google Sheet is switched off)
+  const r = await signInSheet(d);                                              // Google Sheet stays the main store while both are configured
+  if (FB && r.ok) signInFirebase(d).catch(() => {});                           // parallel copy to Firebase; can never block or break sign-in
+  return r;
 }
 const MSG = {
   invalid: 'Please check your details.',
@@ -304,21 +309,65 @@ function showLogin() {
     const r = await signIn(d);
     if (!r.ok) { err.textContent = MSG[r.error] || MSG.server; go.disabled = false; go.textContent = 'Continue'; return; }
     user = { username: r.username || d.username, phone: d.phone }; LS.s('user', user);
-    el.remove(); renderGreet(); toast('Praise the Lord, ' + user.username + '!');
+    el.remove(); renderGreet(); toast('Praise the Lord, ' + user.username + '!'); setTimeout(letterIfDue, 1200);
   };
 }
 document.addEventListener('click', e => { if (e.target.id === 'out' && confirm('Sign out from this device?')) { user = null; LS.s('user', null); renderGreet(); showLogin(); } });
 setInterval(renderGreet, 300000);
+/* ---------- welcome letter popup (text comes from letter.txt) ---------- */
+let LETTER = null, letterShown = false;
+async function loadLetter() {
+  try {
+    const r = await fetch('letter.txt', { cache: 'no-cache' });
+    if (!r.ok) return;
+    const lines = (await r.text()).replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n'), meta = {};
+    let i = 0;
+    for (; i < lines.length && /^[a-z]+\s*:/i.test(lines[i]); i++) meta[lines[i].split(':')[0].trim().toLowerCase()] = lines[i].slice(lines[i].indexOf(':') + 1).trim();
+    const body = lines.slice(i).join('\n').trim();
+    if (!body || /^(no|off|false)$/i.test(meta.show || '')) return;
+    LETTER = { id: meta.id || String(body.length), title: meta.title || 'A Letter to Every Heart', body };
+  } catch {}
+  renderGreet();
+}
+function letterHtml(b) {
+  return b.split(/\n\s*\n/).map(p => {
+    const ls = p.split('\n').map(x => x.trim()).filter(Boolean);
+    if (!ls.length) return '';
+    return '<p>' + [/^Day\s*\d/i.test(ls[0]) ? '<b>' + esc(ls[0]) + '</b>' : esc(ls[0]), ...ls.slice(1).map(esc)].join('<br>') + '</p>';
+  }).join('');
+}
+function openLetter() {
+  if (!LETTER || $('#letter')) return;
+  const el = document.createElement('div');
+  el.id = 'letter'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'lt');
+  el.innerHTML = `<div class="lc"><button class="lx" type="button" aria-label="Close">✕</button><h2 id="lt">${esc(LETTER.title)}</h2><div class="lb">${letterHtml(LETTER.body)}</div><button class="go" type="button">Amen 🙏 Continue</button></div>`;
+  document.body.append(el);
+  const lock = v => ['.col', '.nav'].forEach(s => { const n = $(s); if (n) n.inert = v; });
+  lock(true);
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const close = () => { LS.s('letter', LETTER.id); lock(false); document.removeEventListener('keydown', onKey); el.classList.add('out'); setTimeout(() => el.remove(), 350); };
+  document.addEventListener('keydown', onKey);
+  el.onclick = e => { if (e.target === el) close(); };
+  $('.lx', el).onclick = close; $('.go', el).onclick = close;
+  $('.go', el).focus({ preventScroll: true });
+}
+function letterIfDue() {   // once per letter (change "id:" in letter.txt to show a new one to everybody)
+  if (letterShown || !LETTER || !user || $('#login') || $('#splash')) return;
+  if (LS.g('letter', '') === LETTER.id) return;
+  letterShown = true; openLetter();
+}
+document.addEventListener('click', e => { if (e.target.id === 'letterBtn') openLetter(); });
 /* ---------- splash ---------- */
 let ready; const loaded = new Promise(r => ready = r);
 const sp = $('#splash');
 if (sp && !document.documentElement.classList.contains('nosplash')) {
   document.documentElement.classList.add('ready');
-  const hide = () => { sp.classList.add('out'); setTimeout(() => sp.remove(), 900); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
+  const hide = () => { sp.classList.add('out'); setTimeout(() => { sp.remove(); letterIfDue(); }, 900); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
   sp.onclick = hide; setTimeout(() => loaded.then(hide), 3300);
 }
 /* ---------- boot ---------- */
 if (!user) showLogin(); else renderGreet();
+loadLetter().then(() => setTimeout(letterIfDue, 700));
 loadSongs().then(route).finally(ready).catch(e => { const why = esc((e && e.message) || 'unknown error'); main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.<br><small style="opacity:.6">Reason: ' + why + '</small>'); });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
