@@ -54,7 +54,7 @@ function search(q) {
 }
 
 /* ---------- ui helpers ---------- */
-const heart = '<svg viewBox="0 0 24 24"><path d="M12 21C5 16.500 2 13 2 9a5 5 0 0 1 10-1.500A5 5 0 0 1 22 9c0 4-3 7.500-10 12z"/></svg>';
+const heart = '<svg viewBox="0 0 24 24"><path d="M12 21C5 16.5 2 13 2 9a5 5 0 0 1 10-1.5A5 5 0 0 1 22 9c0 4-3 7.5-10 12z"/></svg>';
 const isFav = id => favs.includes(id);
 const cover = s => `background:radial-gradient(circle at 25% 20%,hsl(45 85% 72%/.45),transparent 55%),linear-gradient(145deg,hsl(${34 + s.cover % 18} 60% 42%),hsl(${22 + s.cover % 14} 55% 15%))`;
 const favBtn = id => `<button class="fav${isFav(id) ? ' on' : ''}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="Favorite">${heart}</button>`;
@@ -109,7 +109,7 @@ const views = {
     const l = songs.filter(s => (s.day || 1) === cur);
     return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <div class="vb"><button id="vtoggle" class="vlink" type="button" aria-expanded="false" aria-controls="vwrap"><span aria-hidden="true">▶</span> Watch video</button></div>
-<div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpeg" data-src="wc-video.mp4" aria-label="Worship Conference 2026 video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
+<div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpg" data-src="wc-video.mp4" aria-label="Worship Conference 2026 video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 <div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}${dayN(i + 1) ? '' : ' soon'}"><small>DAY</small><b>${i + 1}</b>${DATES[i + 1] ? `<em>${esc(DATES[i + 1])}</em>` : ''}</button>`).join('')}</div>
 <h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
@@ -339,17 +339,25 @@ function letterHtml(b) {
 function openLetter() {
   if (!LETTER || $('#letter')) return;
   const el = document.createElement('div');
-  el.id = 'letter'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'lt');
-  el.innerHTML = `<div class="lc"><button class="lx" type="button" aria-label="Close">✕</button><h2 id="lt">${esc(LETTER.title)}</h2><div class="lb">${letterHtml(LETTER.body)}</div><button class="go" type="button">Amen 🙏 Continue</button></div>`;
+  el.id = 'letter'; el.className = 'env'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'lt');
+  el.innerHTML = `<div class="ew"><div class="envelope-wrapper"><div class="envelope"><div class="letter"><div class="text">${esc(LETTER.title)}</div></div><button class="heart" type="button" aria-label="Open the letter"></button></div></div><p class="eh">Tap the heart to open</p></div>
+<div class="lc"><button class="lx" type="button" aria-label="Close">✕</button><h2 id="lt">${esc(LETTER.title)}</h2><div class="lb">${letterHtml(LETTER.body)}</div><button class="go" type="button">Amen 🙏 Continue</button></div>`;
   document.body.append(el);
   const lock = v => ['.col', '.nav'].forEach(s => { const n = $(s); if (n) n.inert = v; });
   lock(true);
   const onKey = e => { if (e.key === 'Escape') close(); };
   const close = () => { LS.s('letter', LETTER.id); lock(false); document.removeEventListener('keydown', onKey); el.classList.add('out'); setTimeout(() => el.remove(), 350); };
+  const open = () => {
+    if (el.classList.contains('flap')) return;
+    el.classList.add('flap');
+    setTimeout(() => { el.classList.add('read'); $('.go', el).focus({ preventScroll: true }); }, 2300);
+  };
   document.addEventListener('keydown', onKey);
-  el.onclick = e => { if (e.target === el) close(); };
+  el.onclick = e => { if (e.target === el && el.classList.contains('read')) close(); };
+  $('.heart', el).onclick = open;
+  $('.envelope', el).onclick = open;
   $('.lx', el).onclick = close; $('.go', el).onclick = close;
-  $('.go', el).focus({ preventScroll: true });
+  $('.heart', el).focus({ preventScroll: true });
 }
 function letterIfDue() {   // once per letter (change "id:" in letter.txt to show a new one to everybody)
   if (letterShown || !LETTER || !user || $('#login') || $('#splash')) return;
