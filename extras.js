@@ -10,6 +10,18 @@ const toast = m => { const t = document.createElement('div'); t.className = 'toa
 /* ===== 0. welcome letter: show the envelope on EVERY open / refresh  (set to false = only once per letter) ===== */
 const LETTER_EVERY_TIME = true;
 if (LETTER_EVERY_TIME) { try { localStorage.removeItem('wc26_letter'); } catch {} }   // forget "already read" before the app decides whether to show it
+if (LETTER_EVERY_TIME) {
+  /* On a refresh the splash screen is skipped but its element stays in the page, so the app never got a moment to open the letter.
+     This waits until the app is ready (signed in, splash finished, sign-in form closed) and then opens the letter - exactly once per page load. */
+  let done = false, tries = 0;
+  new MutationObserver(() => { if ($('#letter')) done = true; }).observe(document.body, { childList: true });   // the app opened it itself
+  const timer = setInterval(() => {
+    if (done || ++tries > 60) return clearInterval(timer);                                                       // checks for up to 24 seconds
+    const splashOn = $('#splash') && !document.documentElement.classList.contains('nosplash');
+    const btn = $('#letterBtn');
+    if (btn && !splashOn && !$('#login') && !$('#letter')) { done = true; btn.click(); }
+  }, 400);
+}
 
 /* ===== 1. colour palettes: tap ◐ to cycle ===== */
 const THEMES = [['dark', 'Ruby & Gold', '#12060a'], ['sapphire', 'Midnight Sapphire', '#050a17'], ['emerald', 'Emerald Night', '#030f0b'], ['light', 'Ivory Rose', '#fbf3ea']];
