@@ -7,6 +7,10 @@ const LSs = (k, v) => { try { localStorage.setItem('wc26_' + k, JSON.stringify(v
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const toast = m => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2200); };
 
+/* ===== 0. welcome letter: show the envelope on EVERY open / refresh  (set to false = only once per letter) ===== */
+const LETTER_EVERY_TIME = true;
+if (LETTER_EVERY_TIME) { try { localStorage.removeItem('wc26_letter'); } catch {} }   // forget "already read" before the app decides whether to show it
+
 /* ===== 1. colour palettes: tap ◐ to cycle ===== */
 const THEMES = [['dark', 'Ruby & Gold', '#12060a'], ['sapphire', 'Midnight Sapphire', '#050a17'], ['emerald', 'Emerald Night', '#030f0b'], ['light', 'Ivory Rose', '#fbf3ea']];
 const meta = $('meta[name=theme-color]');
