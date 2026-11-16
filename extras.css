@@ -5,15 +5,13 @@
 [data-theme=light]{--bg:#fbf3ea;--bg2:#fffaf4;--card:rgba(150,40,55,.05);--bd:rgba(150,50,55,.2);--tx:#2a1215;--mut:#7d5f60;--ac:#a61e2e;--ac2:#c2453f;--on:#ffffff;--glow:rgba(200,60,70,.18);--glow2:rgba(230,170,90,.18);--dot:#a61e2e;--panel:radial-gradient(120% 90% at 50% -10%,#6b0f22 0%,#2a060f 45%,#0b0305 100%)}
 body{background-image:radial-gradient(70vw 46vh at 50% -10%,var(--glow),transparent),radial-gradient(60vw 40vh at 105% 55%,var(--glow2),transparent)}
 .hero .panel{background:var(--panel);border-color:var(--bd)}
-.tabs button.on,.days button.on,#login .go,#letter .go{color:var(--on)}
-#letter.env{--e-heart:#d6142f}
-@keyframes hb{50%{box-shadow:0 0 0 8px rgba(214,20,47,.3)}}
+.tabs button.on,#login .go{color:var(--on)}
 #theme .pal{width:18px;height:18px;border-radius:50%;background:conic-gradient(from 40deg,var(--ac2),var(--ac),var(--dot),var(--ac2));box-shadow:0 0 0 2px var(--bd)}
 
 /* ===== WORSHIP MODE ===== */
 #wmBtn .wl{display:none;margin-left:6px}
 @media(min-width:600px){#wmBtn .wl{display:inline}}
-#wm{position:fixed;inset:0;z-index:97;background:var(--bg);color:var(--tx);animation:lfade .3s both;transition:opacity .25s}
+#wm{position:fixed;inset:0;z-index:97;background:var(--bg);color:var(--tx);animation:wmF .3s both;transition:opacity .25s}
 #wm.out{opacity:0}
 #wm .wm-bar{position:absolute;left:0;right:0;z-index:2;display:flex;align-items:center;gap:10px;transition:opacity .4s,transform .4s}
 #wm .wm-top{top:0;padding:calc(10px + env(safe-area-inset-top)) 12px 18px;background:linear-gradient(var(--bg) 55%,transparent)}
@@ -36,3 +34,5 @@ body{background-image:radial-gradient(70vw 46vh at 50% -10%,var(--glow),transpar
 @keyframes wmR{from{opacity:0;transform:translateX(-60px)}}
 
 .toast{z-index:120}
+
+@keyframes wmF{from{opacity:0}}
