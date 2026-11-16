@@ -1,12 +1,18 @@
-const V='wc26-v34',SHELL=['./','index.html','app.js','songs.json','manifest.webmanifest','icon-192.png','config.js','days.json','icon-512.png','favicon.png','icon-maskable-512.png','lords-church.png','worship-conference.png','cormorant-garamond-italic.woff2','extras.css','extras.js'];
+const V='wc26-v36',SHELL=['./','index.html','app.js','extras.js','extras.css','songs.json','manifest.webmanifest','config.js','icon-192.png','icon-512.png','icon-maskable-512.png','favicon.png','lords-church.png','cormorant-garamond-italic.woff2'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-// Stale-while-revalidate: instant from cache, refreshed in background (new songs.json arrives on next visit)
+// Songs, the Sunday sheet and settings: always the newest copy when online (4 s limit), the saved copy when offline
+const FRESH=/\/(config\.js|sunday\.txt|songs\.json)$/;
+async function fresh(r){
+  const c=await caches.open(V);
+  try{const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),4000);const x=await fetch(r,{signal:ctl.signal});clearTimeout(t);if(x.ok){c.put(r,x.clone());return x}}catch(_){}
+  return (await c.match(r,{ignoreSearch:true}))||fetch(r);
+}
 self.addEventListener('fetch',e=>{
-  const r=e.request;
-  if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
-  if(r.destination==='video'||r.headers.has('range')||/\.mp4$/i.test(new URL(r.url).pathname))return;   // video streams from the network (never cached)
-  if(/\/(config\.js|letter\.txt)$/.test(new URL(r.url).pathname)){e.respondWith(fetch(r).then(x=>{if(x.ok)caches.open(V).then(c=>c.put(r,x.clone()));return x}).catch(()=>caches.match(r)));return}   // settings: always fresh when online
+  const r=e.request,u=new URL(r.url);
+  if(r.method!=='GET'||u.origin!==location.origin)return;
+  if(r.destination==='video'||r.headers.has('range')||/\.mp4$/i.test(u.pathname))return;
+  if(FRESH.test(u.pathname)){e.respondWith(fresh(r));return}
   const key=r.mode==='navigate'?'index.html':r;
   e.respondWith(caches.open(V).then(async c=>{
     const hit=await c.match(key,{ignoreSearch:true});
