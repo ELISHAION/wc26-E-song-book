@@ -9,11 +9,11 @@ const LS = {
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const main = $('#main');
-let songs = [], by = {}, index = [], DATES = {};
+let songs = [], by = {}, index = [], weeks = [];
 let favs = LS.g('favs', []), recent = LS.g('recent', []);
 const LABEL = { te: 'తెలుగు', rom: 'English', en: 'Lyrics' };
 
-/* ---------- song data layer (only place that knows about songs.json) ---------- */
+/* ---------- song library (songs.json) ---------- */
 function repairJson(t) {   // forgives the usual hand-editing slips: raw line breaks/tabs inside lyrics, trailing commas, BOM
   let o = '', inStr = false, esc = false;
   for (const c of t.replace(/^\uFEFF/, '')) {
@@ -37,9 +37,7 @@ function parseSongs(t) {
 }
 async function loadSongs() {
   const r = await fetch('songs.json');
-  const all = parseSongs(await r.text());
-  try { DATES = (await (await fetch('days.json')).json()).dates || {}; } catch { DATES = {}; }
-  songs = all;
+  songs = parseSongs(await r.text());
   by = Object.fromEntries(songs.map(s => [s.id, s]));
   index = songs.map(s => ({
     s, h: [s.title, s.artist, s.album, s.category, s.language, (s.tags || []).join(' '), Object.values(s.lyrics).join(' ')].join(' ').toLowerCase()
@@ -53,12 +51,51 @@ function search(q) {
     .sort((a, b) => a.k - b.k).map(x => x.s);
 }
 
+/* ---------- Sunday sheet (sunday.txt): songs of the week + sermon summary ---------- */
+const WKEYS = ['date', 'title', 'sermon', 'speaker', 'scripture', 'summary', 'points', 'songs'];
+function parseWeeks(t) {
+  return t.replace(/^\uFEFF/, '').replace(/\r/g, '').split(/^\s*---+\s*$/m).map(block => {
+    const w = { date: '', title: '', sermon: '', speaker: '', scripture: '', summary: '', points: [], songs: [] };
+    let k = null, any = false;
+    for (const raw of block.split('\n')) {
+      const l = raw.trim();
+      if (l.startsWith('#')) continue;                                   // comment line
+      const m = /^([a-z]+)\s*:\s*(.*)$/i.exec(l);
+      if (m && WKEYS.includes(m[1].toLowerCase())) {
+        k = m[1].toLowerCase(); any = true; const v = m[2].trim();
+        if (k === 'points' || k === 'songs') { if (v) w[k].push(v.replace(/^[-•*]\s*/, '')); } else w[k] = v;
+        continue;
+      }
+      if (!k) continue;
+      if (k === 'points' || k === 'songs') { if (l) w[k].push(l.replace(/^[-•*]\s*/, '')); }
+      else if (k === 'summary') {
+        if (l) w.summary += (w.summary === '' || w.summary.endsWith('\n\n') ? '' : ' ') + l;
+        else if (w.summary && !w.summary.endsWith('\n\n')) w.summary += '\n\n';
+      }
+    }
+    w.summary = w.summary.trim();
+    return any && (w.date || w.songs.length || w.sermon || w.summary) ? w : null;
+  }).filter(Boolean);
+}
+async function loadWeeks() {
+  weeks = [];
+  try {
+    const r = await fetch('sunday.txt', { cache: 'no-cache' });
+    if (!r.ok) return;
+    const find = n => { const k = String(n).trim().toLowerCase(); return by[n] || songs.find(s => s.id.toLowerCase() === k || s.title.toLowerCase() === k); };
+    weeks = parseWeeks(await r.text()).map(w => ({ ...w, list: w.songs.map(find).filter(Boolean) })).sort((a, b) => b.date.localeCompare(a.date));
+  } catch {}
+}
+const contextList = id => { for (const w of weeks) if (w.list.some(s => s.id === id)) return w.list; return songs; };   // prev / next follows the Sunday list
+window.TLC = { get songs() { return songs; }, contextList };                                                              // used by extras.js (worship mode)
+const fmtDate = d => { const x = new Date(d + 'T00:00:00'); return isNaN(x) ? d : x.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); };
+
 /* ---------- ui helpers ---------- */
 const heart = '<svg viewBox="0 0 24 24"><path d="M12 21C5 16.5 2 13 2 9a5 5 0 0 1 10-1.5A5 5 0 0 1 22 9c0 4-3 7.5-10 12z"/></svg>';
 const isFav = id => favs.includes(id);
 const cover = s => `background:radial-gradient(circle at 25% 20%,hsl(45 85% 72%/.45),transparent 55%),linear-gradient(145deg,hsl(${34 + s.cover % 18} 60% 42%),hsl(${22 + s.cover % 14} 55% 15%))`;
 const favBtn = id => `<button class="fav${isFav(id) ? ' on' : ''}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="Favorite">${heart}</button>`;
-const card = (s, i = 0) => `<article class="card" style="--i:${Math.min(i, 12)}"><a href="#/song/${s.id}" class="art" style="${cover(s)}" aria-hidden="true" tabindex="-1">${esc([...s.title][0])}</a><a href="#/song/${s.id}" class="meta"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small><i>Day ${s.day || 1} · ${esc(s.category)}</i></a>${favBtn(s.id)}</article>`;
+const card = (s, i = 0) => `<article class="card" style="--i:${Math.min(i, 12)}"><a href="#/song/${s.id}" class="art" style="${cover(s)}" aria-hidden="true" tabindex="-1">${esc([...s.title][0])}</a><a href="#/song/${s.id}" class="meta"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small><i>${esc(s.category)}</i></a>${favBtn(s.id)}</article>`;
 const grid = a => `<div class="grid">${a.map((s, i) => card(s, i)).join('')}</div>`;
 const empty = (em, t, d) => `<div class="empty"><span class="em" aria-hidden="true">${em}</span><b>${t}</b>${d}</div>`;
 const searchBox = v => `<label class="sb"><span aria-hidden="true">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search songs, artists..." aria-label="Search songs" value="${esc(v)}">${v ? '<button id="clr" aria-label="Clear search">✕</button>' : ''}</label>`;
@@ -73,46 +110,27 @@ function toggleFav(id) {
 }
 function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0, 20); LS.s('recent', recent); }
 
-/* ---------- day helpers ---------- */
-const dayN = d => songs.filter(s => (s.day || 1) === d).length;
-const dayHead = d => `Day ${d}${DATES[d] ? ` <small>· ${esc(DATES[d])}</small>` : ''} <small>${dayN(d) ? dayN(d) + ' songs' : 'Not started yet'}</small>`;
-const dayEmpty = d => empty('♪', `Day ${d} hasn't started yet`, 'Songs will appear here when this day begins. Please check back soon!');
-function wireVideo() {
-  const t = $('#vtoggle'), w = $('#vwrap'), v = $('#wcv'); if (!t || !w || !v) return;
-  const set = open => {
-    w.classList.toggle('open', open); w.inert = !open;
-    t.setAttribute('aria-expanded', open);
-    t.innerHTML = open ? 'Hide video <span aria-hidden="true">✕</span>' : '<span aria-hidden="true">▶</span> Watch video';
-    if (open) { if (!v.getAttribute('src')) v.src = v.dataset.src; } else v.pause();   // video only downloads when opened
-  };
-  t.onclick = () => set(!w.classList.contains('open'));
-  $('#vhide').onclick = () => { set(false); t.focus({ preventScroll: true }); };
-}
-function wireDays() {
-  const box = $('.days'); if (!box) return;
-  box.querySelectorAll('button').forEach(b => b.onclick = () => {
-    const d = +b.dataset.d, prev = LS.g('day', 1); if (d === prev) return;
-    LS.s('day', d);
-    box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-    $('.ind').style.transform = `translateX(${(d - 1) * 100}%)`;
-    const l = songs.filter(s => (s.day || 1) === d), dl = $('#dl');
-    $('#dh').innerHTML = dayHead(d);
-    dl.classList.remove('sl', 'sr'); void dl.offsetWidth;
-    dl.innerHTML = l.length ? grid(l) : dayEmpty(d);
-    dl.classList.add(d > prev ? 'sl' : 'sr');
-  });
-}
+/* ---------- Sunday sheet views ---------- */
+const sermonHtml = w => (w.sermon || w.summary || w.points.length) ? `<section class="sm"><small class="wk-k">SERMON</small>${w.sermon ? `<h3>${esc(w.sermon)}</h3>` : ''}${(w.speaker || w.scripture) ? `<p class="sm-m">${[w.speaker, w.scripture].filter(Boolean).map(esc).join(' · ')}</p>` : ''}${w.summary ? `<div class="sm-s">${w.summary.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}${w.points.length ? `<div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}</section>` : '';
+const weekHtml = (w, latest) => `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>
+${sermonHtml(w)}
+<h2>Songs <small>${w.list.length} ${w.list.length === 1 ? 'song' : 'songs'}</small></h2>${w.list.length ? grid(w.list) : empty('♪', 'Song list coming soon', 'The songs for this Sunday will appear here.')}`;
+
 /* ---------- views ---------- */
 const views = {
   home() {
-    const N = Math.max(5, ...songs.map(s => s.day || 1)), cur = Math.min(LS.g('day', 1), N);
-    const l = songs.filter(s => (s.day || 1) === cur);
-    return `<section class="hero"><div class="panel"><img src="worship-conference.png" alt="Worship Conference 2026"><p class="yr">2026 · SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
-<div class="vb"><button id="vtoggle" class="vlink" type="button" aria-expanded="false" aria-controls="vwrap"><span aria-hidden="true">▶</span> Watch video</button></div>
-<div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpeg" data-src="wc-video.mp4" aria-label="Worship Conference 2026 video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
+    const w = weeks[0];
+    return `<section class="hero"><div class="panel"><img src="lords-church.png" alt="The Lord's Church"><div class="nm">The Lord's Church</div><p class="yr">SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
-<div class="days" role="tablist" aria-label="Conference days"><span class="ind" style="transform:translateX(${(cur - 1) * 100}%)"></span>${Array.from({ length: N }, (_, i) => `<button role="tab" data-d="${i + 1}" class="${i + 1 === cur ? 'on' : ''}${dayN(i + 1) ? '' : ' soon'}"><small>DAY</small><b>${i + 1}</b>${DATES[i + 1] ? `<em>${esc(DATES[i + 1])}</em>` : ''}</button>`).join('')}</div>
-<h2 id="dh">${dayHead(cur)}</h2><div id="dl">${l.length ? grid(l) : dayEmpty(cur)}</div>`;
+${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab to browse every song.')}
+<div class="more"><a href="#/search">All songs (${songs.length}) →</a>${weeks.length > 1 ? '<a href="#/weeks">Past Sundays →</a>' : ''}</div>`;
+  },
+  weeks() {
+    return `<h2 style="margin-top:28px">Past Sundays</h2>` + (weeks.length ? weeks.map(w => `<a class="wk-c" href="#/week/${esc(w.date)}"><b>${esc(fmtDate(w.date))}</b><small>${esc(w.sermon || w.title || 'Sunday Worship')}</small><i>${w.list.length} songs</i></a>`).join('') : empty('◷', 'Nothing here yet', 'Sunday sheets will be listed here.'));
+  },
+  week(d) {
+    const w = weeks.find(x => x.date === d);
+    return w ? `<a class="back" href="#/weeks">← Past Sundays</a>` + weekHtml(w, w === weeks[0]) : empty('♪', 'Sunday not found', '<a href="#/" style="color:var(--ac)">Back to home</a>');
   },
   search() {
     return `<div style="padding-top:24px">${searchBox('')}</div><div id="res"></div>`;
@@ -130,17 +148,17 @@ const views = {
     if (!s) return empty('♪', 'Song not found', '<a href="#/" style="color:var(--ac)">Back to home</a>');
     pushRecent(id);
     const keys = Object.keys(s.lyrics);
-    const sib = songs.filter(x => (x.day || 1) === (s.day || 1)), si = sib.findIndex(x => x.id === id), pv = sib[si - 1], nx = sib[si + 1];
+    const sib = contextList(id), si = sib.findIndex(x => x.id === id), pv = sib[si - 1], nx = sib[si + 1];
     let k = LS.g('lang', keys[0]); if (!keys.includes(k)) k = keys[0];
     const body = k => s.lyrics[k].split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
     setTimeout(() => {
       const ly = $('#ly');
       document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { LS.s('lang', b.dataset.k); ly.innerHTML = body(b.dataset.k); document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); });
     });
-    return `<div class="rh"><button class="ib" onclick="history.length>1?history.back():location.hash='#/'" aria-label="Back">←</button><div class="t"><h1>${esc(s.title)}</h1><small>Day ${s.day || 1} · ${esc(s.artist)}</small></div>${favBtn(id).replace('class="fav', 'class="ib fav').replace(/position:absolute/, '')}</div>
+    return `<div class="rh"><button class="ib" onclick="history.length>1?history.back():location.hash='#/'" aria-label="Back">←</button><div class="t"><h1>${esc(s.title)}</h1><small>${esc(s.artist)}</small></div>${favBtn(id).replace('class="fav', 'class="ib fav').replace(/position:absolute/, '')}</div>
 ${keys.length > 1 ? `<div class="tabs" role="tablist">${keys.map(x => `<button data-k="${x}" role="tab" class="${x === k ? 'on' : ''}">${LABEL[x] || x}</button>`).join('')}</div>` : ''}
 <div class="ly" id="ly">${body(k)}</div>
-<nav class="pn" aria-label="Songs on this day">${pv ? `<a href="#/song/${pv.id}">← ${esc(pv.title)}</a>` : '<span></span>'}${nx ? `<a href="#/song/${nx.id}">${esc(nx.title)} →</a>` : ''}</nav>`;
+<nav class="pn" aria-label="Next and previous song">${pv ? `<a href="#/song/${pv.id}">← ${esc(pv.title)}</a>` : '<span></span>'}${nx ? `<a href="#/song/${nx.id}">${esc(nx.title)} →</a>` : ''}</nav>`;
   }
 };
 
@@ -155,7 +173,8 @@ function wireSearch() {
     if (!v && c) c.remove();
     if (!v) {
       const tags = [...new Set(songs.flatMap(s => [s.category, ...(s.tags || [])]))].slice(0, 12);
-      res.innerHTML = `<div class="chips" aria-label="Suggestions">${tags.map(t => `<button class="chip" data-s="${esc(t)}">${esc(t)}</button>`).join('')}</div>` + empty('⌕', 'Find your song', 'Search by title, artist, album, tag or a line of lyrics.');
+      const all = [...songs].sort((a, b) => a.title.localeCompare(b.title));
+      res.innerHTML = `<div class="chips" aria-label="Suggestions">${tags.map(t => `<button class="chip" data-s="${esc(t)}">${esc(t)}</button>`).join('')}</div><h2>All songs <small>${all.length}</small></h2>${grid(all)}`;
       return;
     }
     const r = search(v);
@@ -176,11 +195,11 @@ function render() {
   const v = views[name] || views.home;
   main.style.animation = 'none'; main.offsetHeight; main.style.animation = '';
   main.innerHTML = v(id ? decodeURIComponent(id) : undefined);
-  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (name === 'song' ? 'home' : name)));
+  const tab = { song: 'home', week: 'home', weeks: 'home' }[name] || name;
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.r === tab));
   $('#prog').style.width = 0;
   if (name !== 'search' || !$('#q')) window.scrollTo({ top: 0, behavior: 'instant' });
   if (name === 'search') wireSearch();
-  if (name === 'home') { wireDays(); wireVideo(); }
   renderGreet();
 }
 function route() { render(); }
@@ -192,14 +211,13 @@ addEventListener('scroll', () => {
 addEventListener('hashchange', route);
 
 /* ---------- theme, share, install, offline ---------- */
-$('#theme').onclick = () => {
+$('#theme').onclick = () => {   // extras.js replaces this with the palette picker
   const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = t; LS.s('theme', t);
-  $('meta[name=theme-color]').content = t === 'dark' ? '#0a0907' : '#f7f2e8';
 };
 $('#share').onclick = async () => {
   const url = location.origin + location.pathname;
-  const data = { title: 'WC 2026 Songs', text: "The Lord's Church Worship Conference 2026 songs — works offline.", url };
+  const data = { title: "The Lord's Church Songbook", text: "The Lord's Church songbook — lyrics that work offline.", url };
   try { if (navigator.share) { await navigator.share(data); return; } } catch (e) { if (e.name === 'AbortError') return; }
   try { await navigator.clipboard.writeText(url); toast('Link copied — send it to a friend'); } catch { prompt('Copy this link', url); }
 };
@@ -209,57 +227,16 @@ const net = () => { $('#off').hidden = navigator.onLine; };
 addEventListener('online', net); addEventListener('offline', net); net();
 
 /* ---------- sign-in (Google Sheet via Apps Script) + greeting ---------- */
-const API = (window.WC_API || '').trim();   // Google Sheet (Apps Script) link - optional while you switch over
-const FB = window.WC_FIREBASE && window.WC_FIREBASE.projectId ? window.WC_FIREBASE : null;   // Firebase config (set by build.js from WC_FIREBASE_CONFIG)
+const API = (window.WC_API || '').trim();   // your Apps Script link (set in Vercel as WC_API_URL)
 let user = LS.g('user', null);
 const hello = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 function renderGreet() {
   const g = $('#greet'); if (!g) return;
   if (!user) { g.hidden = true; return; }
   g.hidden = false;
-  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><div class="gb">${LETTER ? '<button id="letterBtn" type="button">✉ Letter</button>' : ''}<button id="out" type="button">Sign out</button></div>`;
+  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><div class="gb"><button id="out" type="button">Sign out</button></div>`;
 }
-/* ---- Firebase (Firestore) sign-in: one document per identical name+phone+email, so duplicates are impossible ---- */
-let fbp = null;
-const loadFirebase = () => window.WC_LOAD_FIREBASE ? window.WC_LOAD_FIREBASE() : (async () => {   // SDK is loaded only when someone signs in
-  const V = 'https://www.gstatic.com/firebasejs/10.14.1/';
-  const [app, fs] = await Promise.all([import(V + 'firebase-app.js'), import(V + 'firebase-firestore.js')]);
-  return { fs, db: fs.initializeFirestore(app.initializeApp(FB), { experimentalAutoDetectLongPolling: true }) };
-})();
-async function sha256Hex(s) {
-  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-const fbErr = e => {
-  const c = (e && e.code) || '', m = (e && e.message) || '';
-  if (c === 'deadline-exceeded') return 'timeout';
-  if (c === 'unavailable' || /network|offline|fetch|import/i.test(m)) return navigator.onLine ? 'network' : 'offline';
-  return 'server';
-};
-async function signInFirebase(d, tries = 2) {
-  const timer = new Promise((_, rej) => setTimeout(() => rej({ code: 'deadline-exceeded' }), 25000));
-  const work = (async () => {
-    const id = await sha256Hex(`${d.username.toLowerCase().replace(/\s+/g, ' ').trim()}|${d.phone}|${d.email}`);
-    if (!fbp) fbp = loadFirebase().catch(e => { fbp = null; throw e; });
-    const { fs, db } = await fbp;
-    const ref = fs.doc(db, 'users', id);
-    const bump = () => fs.updateDoc(ref, { lastLogin: fs.serverTimestamp(), logins: fs.increment(1) });
-    try { await bump(); return { ok: true, username: d.username, created: false }; } catch (e) { if (e.code === 'unavailable') throw e; }   // not there yet -> create
-    try {
-      await fs.setDoc(ref, { username: d.username, phone: d.phone, email: d.email, registeredAt: fs.serverTimestamp(), lastLogin: fs.serverTimestamp(), logins: 1 });
-      return { ok: true, username: d.username, created: true };
-    } catch (e) {
-      if (e.code === 'permission-denied') { await bump(); return { ok: true, username: d.username, created: false }; }   // created a moment ago by the same person
-      throw e;
-    }
-  })();
-  try { return await Promise.race([work, timer]); }
-  catch (e) {
-    if (tries > 1 && fbErr(e) === 'network') { await new Promise(r => setTimeout(r, 1500)); return signInFirebase(d, tries - 1); }
-    return { ok: false, error: fbErr(e) };
-  }
-}
-async function signInSheet(d, tries = 2) {   // Google Sheet via Apps Script
+async function signInSheet(d, tries = 2) {
   const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 25000);
   try {
     const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(d), signal: ac.signal });
@@ -270,12 +247,9 @@ async function signInSheet(d, tries = 2) {   // Google Sheet via Apps Script
   } finally { clearTimeout(tm); }
 }
 async function signIn(d) {
-  if (!FB && !API) return { ok: true, username: d.username, local: true };    // nothing configured = local test mode
+  if (!API) return { ok: true, username: d.username, local: true };    // not configured = local test mode only
   if (!navigator.onLine) return { ok: false, error: 'offline' };
-  if (!API) return signInFirebase(d);                                          // Firebase only (after the Google Sheet is switched off)
-  const r = await signInSheet(d);                                              // Google Sheet stays the main store while both are configured
-  if (FB && r.ok) signInFirebase(d).catch(() => {});                           // parallel copy to Firebase; can never block or break sign-in
-  return r;
+  return signInSheet(d);
 }
 const MSG = {
   invalid: 'Please check your details.',
@@ -291,7 +265,7 @@ addEventListener('online', () => { const e = $('#login .err'); if (e) e.textCont
 function showLogin() {
   if ($('#login')) return;
   const el = document.createElement('div'); el.id = 'login';
-  el.innerHTML = `<form class="lg" novalidate><img src="lords-church.png" alt=""><h1>Welcome</h1><p class="lead">Praise the Lord! Sign in once to open the Worship Conference 2026 songbook.</p>
+  el.innerHTML = `<form class="lg" novalidate><img src="lords-church.png" alt=""><h1>Welcome</h1><p class="lead">Praise the Lord! Sign in once to open The Lord's Church songbook.</p>
 <label>Username<input name="u" autocomplete="username" maxlength="40" required></label>
 <label>Phone number<input name="p" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="10-digit mobile number" required></label>
 <label>Email<input name="e" type="email" inputmode="email" autocomplete="email" maxlength="80" placeholder="you@example.com" required></label>
@@ -309,73 +283,22 @@ function showLogin() {
     const r = await signIn(d);
     if (!r.ok) { err.textContent = MSG[r.error] || MSG.server; go.disabled = false; go.textContent = 'Continue'; return; }
     user = { username: r.username || d.username, phone: d.phone }; LS.s('user', user);
-    el.remove(); renderGreet(); toast('Praise the Lord, ' + user.username + '!'); setTimeout(letterIfDue, 1200);
+    el.remove(); renderGreet(); toast('Praise the Lord, ' + user.username + '!');
   };
 }
 document.addEventListener('click', e => { if (e.target.id === 'out' && confirm('Sign out from this device?')) { user = null; LS.s('user', null); renderGreet(); showLogin(); } });
 setInterval(renderGreet, 300000);
-/* ---------- welcome letter popup (text comes from letter.txt) ---------- */
-let LETTER = null, letterShown = false;
-async function loadLetter() {
-  try {
-    const r = await fetch('letter.txt', { cache: 'no-cache' });
-    if (!r.ok) return;
-    const lines = (await r.text()).replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n'), meta = {};
-    let i = 0;
-    for (; i < lines.length && /^[a-z]+\s*:/i.test(lines[i]); i++) meta[lines[i].split(':')[0].trim().toLowerCase()] = lines[i].slice(lines[i].indexOf(':') + 1).trim();
-    const body = lines.slice(i).join('\n').trim();
-    if (!body || /^(no|off|false)$/i.test(meta.show || '')) return;
-    LETTER = { id: meta.id || String(body.length), title: meta.title || 'A Letter to Every Heart', body };
-  } catch {}
-  renderGreet();
-}
-function letterHtml(b) {
-  return b.split(/\n\s*\n/).map(p => {
-    const ls = p.split('\n').map(x => x.trim()).filter(Boolean);
-    if (!ls.length) return '';
-    return '<p>' + [/^Day\s*\d/i.test(ls[0]) ? '<b>' + esc(ls[0]) + '</b>' : esc(ls[0]), ...ls.slice(1).map(esc)].join('<br>') + '</p>';
-  }).join('');
-}
-function openLetter() {
-  if (!LETTER || $('#letter')) return;
-  const el = document.createElement('div');
-  el.id = 'letter'; el.className = 'env'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'lt');
-  el.innerHTML = `<div class="ew"><div class="envelope-wrapper"><div class="envelope"><div class="letter"><div class="text">${esc(LETTER.title)}</div></div><button class="heart" type="button" aria-label="Open the letter"></button></div></div><p class="eh">Tap the heart to open</p></div>
-<div class="lc"><button class="lx" type="button" aria-label="Close">✕</button><h2 id="lt">${esc(LETTER.title)}</h2><div class="lb">${letterHtml(LETTER.body)}</div><button class="go" type="button">Amen 🙏 Continue</button></div>`;
-  document.body.append(el);
-  const lock = v => ['.col', '.nav'].forEach(s => { const n = $(s); if (n) n.inert = v; });
-  lock(true);
-  const onKey = e => { if (e.key === 'Escape') close(); };
-  const close = () => { LS.s('letter', LETTER.id); lock(false); document.removeEventListener('keydown', onKey); el.classList.add('out'); setTimeout(() => el.remove(), 350); };
-  const open = () => {
-    if (el.classList.contains('flap')) return;
-    el.classList.add('flap');
-    setTimeout(() => { el.classList.add('read'); $('.go', el).focus({ preventScroll: true }); }, 2300);
-  };
-  document.addEventListener('keydown', onKey);
-  el.onclick = e => { if (e.target === el && el.classList.contains('read')) close(); };
-  $('.heart', el).onclick = open;
-  $('.envelope', el).onclick = open;
-  $('.lx', el).onclick = close; $('.go', el).onclick = close;
-  $('.heart', el).focus({ preventScroll: true });
-}
-function letterIfDue() {   // once per letter (change "id:" in letter.txt to show a new one to everybody)
-  if (letterShown || !LETTER || !user || $('#login') || $('#splash')) return;
-  if (LS.g('letter', '') === LETTER.id) return;
-  letterShown = true; openLetter();
-}
-document.addEventListener('click', e => { if (e.target.id === 'letterBtn') openLetter(); });
+
 /* ---------- splash ---------- */
 let ready; const loaded = new Promise(r => ready = r);
 const sp = $('#splash');
 if (sp && !document.documentElement.classList.contains('nosplash')) {
   document.documentElement.classList.add('ready');
-  const hide = () => { sp.classList.add('out'); setTimeout(() => { sp.remove(); letterIfDue(); }, 900); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
-  sp.onclick = hide; setTimeout(() => loaded.then(hide), 3300);
+  const hide = () => { sp.classList.add('out'); setTimeout(() => sp.remove(), 900); try { sessionStorage.setItem('wc26_splash', 1); } catch {} };
+  sp.onclick = hide; setTimeout(() => loaded.then(hide), 2600);
 }
 /* ---------- boot ---------- */
 if (!user) showLogin(); else renderGreet();
-loadLetter().then(() => setTimeout(letterIfDue, 700));
-loadSongs().then(route).finally(ready).catch(e => { const why = esc((e && e.message) || 'unknown error'); main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Lyrics unavailable', 'Open this app once while online to save your library.<br><small style="opacity:.6">Reason: ' + why + '</small>'); });
+loadSongs().then(loadWeeks).then(route).finally(ready).catch(e => { const why = esc((e && e.message) || 'unknown error'); main.innerHTML = location.protocol === 'file:' ? empty('♪', 'Start a local server', 'This page was opened as a file. Run <code>python -m http.server 8000</code> in this folder, then open http://localhost:8000') : empty('♪', 'Songs unavailable', 'Open this app once while online to save your library.<br><small style="opacity:.6">Reason: ' + why + '</small>'); });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
