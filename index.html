@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>The Lord's Church WC 2026 Songs eBook</title>
-<meta name="description" content="Search and read lyrics anywhere. Works offline.">
-<meta name="apple-mobile-web-app-title" content="WC 2026 Songs">
+<title>The Lord's Church Songbook</title>
+<meta name="description" content="The Lord's Church songbook. Search and read lyrics anywhere, even offline.">
+<meta name="apple-mobile-web-app-title" content="TLC Songs">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -84,12 +84,6 @@ h2{font-size:22px;margin:34px 0 14px;letter-spacing:-.01em}
 .ly p{margin:0 0 2em}
 #prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;background:linear-gradient(90deg,var(--ac),var(--ac2))}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:12px 20px;border-radius:14px;background:var(--bg2);border:1px solid var(--bd);z-index:60;font-size:14px;animation:in .25s}
-#splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;color:#f4f3fa;transition:opacity .6s,transform .6s}
-#splash.out{opacity:0;transform:scale(1.04);pointer-events:none}.nosplash #splash{display:none}
-#splash img{display:block;max-width:100%;height:auto}
-#splash .ch{position:absolute;left:0;right:0;margin:0 auto;top:calc(50% - 60px);width:120px;height:120px}#splash .wc{position:absolute;left:0;right:0;margin:0 auto;top:calc(50% + 84px);width:min(320px,78vw);animation:in .9s .35s both}
-#splash p{position:absolute;left:0;right:0;top:calc(50% + 275px);margin:0;letter-spacing:.3em;font-size:14px;color:#d9b866;font-weight:600;animation:in .9s .7s both}
-.event{margin:0 0 10px;color:var(--ac);font-weight:600;letter-spacing:.12em;font-size:13px;text-transform:uppercase}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 /* ===== premium gold theme ===== */
@@ -124,13 +118,6 @@ h2 small{font-family:var(--sans);font-size:13px;color:var(--mut);font-weight:500
 .hero .panel p{max-width:none;margin-left:auto;margin-right:auto;text-align:center}
 .hero .panel img{display:block;margin:0 auto}
 /* ===== day-wise layout + motion ===== */
-.days{position:sticky;top:68px;z-index:12;display:grid;grid-template-columns:repeat(5,1fr);padding:4px;margin:22px 0 0;border-radius:18px;background:color-mix(in srgb,var(--bg2) 82%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--bd)}
-.days .ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/5);border-radius:14px;background:linear-gradient(160deg,var(--ac2),var(--ac));transition:transform .5s cubic-bezier(.3,1.25,.4,1);box-shadow:0 8px 24px -8px var(--ac)}
-.days button{position:relative;z-index:1;padding:9px 0;display:flex;flex-direction:column;align-items:center;color:var(--mut);transition:color .3s}
-.days button small{font-size:10px;letter-spacing:.22em}.days button b{font-family:var(--serif);font-size:24px;line-height:1.1}
-.days button.on{color:#0a0907}
-.sl{animation:slL .5s cubic-bezier(.2,.8,.2,1)}.sr{animation:slR .5s cubic-bezier(.2,.8,.2,1)}
-@keyframes slL{from{opacity:0;transform:translateX(40px)}}@keyframes slR{from{opacity:0;transform:translateX(-40px)}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}}
 @keyframes fo{to{opacity:0;transform:translateY(-6px)}}
 .card{animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*55ms)}
@@ -153,7 +140,6 @@ img{max-width:100%}
 .ic{display:none}
 .ly,.meta,.rh .t{overflow-wrap:anywhere}
 .rh .t{min-width:0}
-#splash{overflow:hidden;width:100%;height:100vh;height:100dvh}
 @media(max-width:480px){
 .col{padding-left:16px;padding-right:16px}
 .brand{letter-spacing:.12em;font-size:13px;gap:8px}
@@ -163,16 +149,8 @@ img{max-width:100%}
 .hero .panel{padding:26px 14px 22px}
 .hero .sub{font-size:24px}
 }
-@media(max-width:359px){.days button b{font-size:20px}.brand span{display:none}}
+@media(max-width:359px){.brand span{display:none}}
 /* ===== splash v2: starts exactly like the phone's own launch icon, then glides up ===== */
-#splash{transition:opacity .5s .25s;transform:none}
-#splash.out{opacity:0;transform:none}
-#splash .stage{position:absolute;inset:0;transition:opacity .25s}
-#splash.out .stage{opacity:0}
-#splash .ch{width:min(50vw,220px);height:auto;top:50%;margin:calc(min(50vw,220px)/-2) auto 0;animation:chup 1.5s cubic-bezier(.65,0,.35,1) .35s both}
-@keyframes chup{to{transform:translateY(-27vh) scale(.5)}}
-#splash .wc{top:calc(50% - 30px);margin-top:0;animation:in .9s 1.0s both}
-#splash p{top:calc(50% + 150px);animation:in .9s 1.4s both}
 /* ===== sign-in + greeting ===== */
 #login{position:fixed;inset:0;z-index:90;overflow-y:auto;background:var(--bg);background-image:radial-gradient(80vw 50vh at 50% -10%,color-mix(in srgb,var(--ac) 22%,transparent),transparent);display:flex;padding:24px 18px}
 #login .lg{margin:auto;width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px;animation:pg .5s both}
@@ -190,67 +168,54 @@ img{max-width:100%}
 #greet b{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #greet span{font-family:"Cormorant Garamond",var(--serif);font-style:italic;color:var(--ac);font-size:21px;line-height:1.2}
 #greet button{flex:none;font-size:12px;color:var(--mut);padding:10px 4px}
-.days em{font-style:normal;font-size:9px;letter-spacing:.03em;opacity:.8;margin-top:1px;white-space:nowrap}
-.days button.soon:not(.on){opacity:.5}
-/* ===== collapsible video ===== */
-.vb{display:flex;justify-content:flex-end;margin-top:10px}
-.vlink{display:inline-flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.06em;color:var(--ac);padding:8px 2px;transition:opacity .2s}
-.vlink:hover{opacity:.8}
-.vwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s cubic-bezier(.2,.8,.2,1)}
-.vwrap.open{grid-template-rows:1fr}
-.vin{min-height:0;overflow:hidden;opacity:0;transition:opacity .4s}
-.vwrap.open .vin{opacity:1}
-.vin video{display:block;width:100%;max-height:min(70vh,560px);background:#000;border-radius:18px;margin-top:4px;object-fit:contain;border:1px solid var(--bd)}
-.vfoot{display:flex;justify-content:flex-end;margin-top:2px}
-/* ===== welcome letter popup ===== */
-#letter{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:lfade .35s both;transition:opacity .3s}
-#letter.out{opacity:0}
-#letter .lc{position:relative;width:100%;max-width:460px;max-height:min(86vh,720px);max-height:min(86dvh,720px);display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--bd);border-radius:26px;padding:26px 22px 20px;box-shadow:0 30px 90px -30px var(--ac);animation:lpop .5s cubic-bezier(.2,.8,.2,1) both}
-@keyframes lfade{from{opacity:0}}
-@keyframes lpop{from{opacity:0;transform:translateY(24px) scale(.96)}}
-#letter h2{font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-weight:600;font-size:30px;line-height:1.15;margin:0 38px 12px 0;color:var(--ac)}
-#letter .lb{overflow-y:auto;overscroll-behavior:contain;padding-right:6px;font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-overflow-scrolling:touch}
-#letter .lb p{margin:0 0 1em;overflow-wrap:anywhere}
-#letter .lb b{color:var(--ac);font-weight:600}
-#letter .lx{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;font-size:15px}
-#letter .go{margin-top:14px;height:52px;flex:none;border-radius:16px;background:linear-gradient(160deg,var(--ac2),var(--ac));color:#0a0907;font-weight:700;font-size:16px;letter-spacing:.03em}
 .gb{display:flex;gap:2px;flex:none;align-items:center}
-/* ===== envelope intro for the letter ===== */
-#letter.env{--e-bg:#f5edd1;--e-tab:#ecdeb8;--e-cover:#e6cfa7;--e-sh:rgba(0,0,0,.2);--e-heart:#fc08e7}
-#letter .ew{display:flex;flex-direction:column;align-items:center;gap:56px;animation:lpop .6s cubic-bezier(.2,.8,.2,1) both;transition:opacity .35s}
-#letter.read .ew{display:none}
-#letter .lc{display:none}
-#letter.read .lc{display:flex}
-#letter .eh{margin:0;font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-size:22px;color:#f0d9a0;transition:opacity .4s}
-#letter.flap .eh{opacity:0}
-#letter .envelope-wrapper{background:var(--e-bg);box-shadow:0 0 40px var(--e-sh)}
-#letter .envelope{position:relative;width:300px;height:230px;max-width:100%}
-#letter .envelope::before{content:"";position:absolute;top:0;z-index:2;border-top:130px solid var(--e-tab);border-right:150px solid transparent;border-left:150px solid transparent;transform-origin:top;transition:all .5s ease-in-out .7s}
-#letter .envelope::after{content:"";position:absolute;z-index:2;width:0;height:0;border-top:130px solid transparent;border-right:150px solid var(--e-cover);border-bottom:100px solid var(--e-cover);border-left:150px solid var(--e-cover)}
-#letter .envelope .letter{position:absolute;right:20%;bottom:0;width:54%;height:80%;background:#fff;text-align:center;transition:all 1s ease-in-out;box-shadow:0 0 5px var(--e-sh);padding:20px 10px}
-#letter .envelope .letter .text{font-family:var(--serif);color:#444;text-align:left;font-size:11px;line-height:1.4}
-#letter .heart{position:absolute;top:50%;left:50%;width:15px;height:15px;padding:0;border:0;background:var(--e-heart);z-index:4;transform:translate(-50%,-20%) rotate(-45deg);transition:transform .5s ease-in-out 1s;box-shadow:0 1px 6px var(--e-sh);cursor:pointer;animation:hb 1.2s ease-in-out infinite}
-#letter .heart::before,#letter .heart::after{content:"";position:absolute;width:15px;height:15px;background:var(--e-heart);border-radius:50%}
-#letter .heart::before{top:-7.5px}
-#letter .heart::after{right:-7.5px}
-@keyframes hb{50%{box-shadow:0 0 0 8px rgba(252,8,231,.25)}}
-#letter.flap .envelope::before{transform:rotateX(180deg);z-index:0}
-#letter.flap .envelope .letter{bottom:100px;transform:scale(1.5);transition-delay:1s}
-#letter.flap .heart{transform:rotate(45deg);transition-delay:.4s;animation:none}
+/* ===== splash: starts exactly like the phone's own launch icon ===== */
+#splash{position:fixed;inset:0;z-index:100;width:100%;height:100vh;height:100dvh;overflow:hidden;background:#000;color:#f5efe3;transition:opacity .5s .25s}
+#splash.out{opacity:0;pointer-events:none}
+.nosplash #splash{display:none}
+#splash .stage{position:absolute;inset:0;transition:opacity .25s}
+#splash.out .stage{opacity:0}
+#splash .ch{position:absolute;left:0;right:0;top:50%;width:min(50vw,220px);height:auto;margin:calc(min(50vw,220px)/-2) auto 0}
+#splash .nm{position:absolute;left:0;right:0;top:calc(50% + min(25vw,110px) + 28px);margin:0;text-align:center;font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:600;font-size:32px;color:#f7d98f;animation:in .9s .4s both}
+#splash .sb2{position:absolute;left:0;right:0;top:calc(50% + min(25vw,110px) + 76px);margin:0;text-align:center;letter-spacing:.42em;font-size:13px;font-weight:600;color:#cdb98f;animation:in .9s .8s both}
+/* ===== The Lord's Church songbook: hero, Sunday sheet, sermon ===== */
+.hero .panel{padding:30px 20px 24px}
+.hero .panel img{width:96px;height:96px;border-radius:22px;margin:0 auto}
+.hero .panel .nm{margin:14px 0 0;font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-weight:600;font-size:clamp(34px,9vw,46px);line-height:1.1;color:#f9ece6}
+.wk{margin:30px 0 6px}
+.wk-k{display:block;color:var(--ac);letter-spacing:.3em;font-size:11px;font-weight:700}
+.wk-d{font-family:var(--serif);font-size:clamp(24px,6vw,32px);font-weight:600;margin:6px 0 2px;line-height:1.2}
+.wk-t{margin:0;color:var(--mut);font-size:15px}
+.sm{position:relative;overflow:hidden;margin:22px 0 6px;padding:22px 20px 14px 24px;border:1px solid var(--bd);border-radius:22px;background:linear-gradient(160deg,var(--card),transparent)}
+.sm::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;border-radius:3px;background:linear-gradient(var(--ac2),var(--ac))}
+.sm h3{font-family:var(--serif);font-size:clamp(22px,5.5vw,28px);line-height:1.25;margin:8px 0 4px}
+.sm-m{margin:0 0 12px;color:var(--ac);font-size:14px;letter-spacing:.04em}
+.sm-s p{margin:0 0 .9em;font-family:var(--serif);font-size:17px;line-height:1.7;overflow-wrap:anywhere}
+.sm-p{margin-top:10px}
+.sm-p>b{display:block;color:var(--ac);letter-spacing:.14em;font-size:12px;text-transform:uppercase;margin-bottom:6px}
+.sm-p ol{list-style:none;counter-reset:p;margin:0;padding:0}
+.sm-p li{counter-increment:p;position:relative;padding:12px 0 12px 42px;border-top:1px solid var(--bd);font-family:var(--serif);font-size:17px;line-height:1.55;overflow-wrap:anywhere}
+.sm-p li::before{content:counter(p);position:absolute;left:0;top:11px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--ac);color:var(--on,#0a0907);font-family:var(--sans);font-size:13px;font-weight:700}
+.more{display:flex;flex-wrap:wrap;gap:4px 24px;margin:24px 0 0}
+.more a,.back{color:var(--ac);font-size:15px;letter-spacing:.03em;padding:8px 0}
+.back{display:inline-flex;margin-top:18px}
+.wk-c{display:flex;flex-direction:column;gap:2px;padding:16px 4px;border-bottom:1px solid var(--bd)}
+.wk-c b{font-family:var(--serif);font-size:20px;font-weight:600}.wk-c small{color:var(--mut);font-size:14px}
+.wk-c i{font-style:normal;color:var(--ac);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
 </style>
 <link rel="stylesheet" href="extras.css">
 </head>
 <body>
-<div id="splash" role="img" aria-label="The Lord's Church Worship Conference 2026 songs"><div class="stage"><img class="ch" src="lords-church.png" alt="The Lord's Church"><img class="wc" src="worship-conference.png" alt="Worship Conference"><p>2026 SONGS</p></div></div>
+<div id="splash" role="img" aria-label="The Lord's Church Songbook"><div class="stage"><img class="ch" src="lords-church.png" alt="The Lord's Church"><p class="nm">The Lord's Church</p><p class="sb2">SONGBOOK</p></div></div>
 <div id="prog"></div>
 <nav class="nav" aria-label="Main">
 <a href="#/" data-r="home"><b aria-hidden="true">⌂</b>Home</a>
-<a href="#/search" data-r="search"><b aria-hidden="true">⌕</b>Search</a>
+<a href="#/search" data-r="search"><b aria-hidden="true">⌕</b>Songs</a>
 <a href="#/favs" data-r="favs"><b aria-hidden="true">♥</b>Favorites</a>
 <a href="#/recent" data-r="recent"><b aria-hidden="true">◷</b>Recent</a>
 </nav>
 <div class="col">
-<header class="top"><a class="brand" href="#/"><img src="lords-church.png" alt=""><span>WC 2026 SONGS</span></a>
+<header class="top"><a class="brand" href="#/"><img src="lords-church.png" alt=""><span>THE LORD'S CHURCH</span></a>
 <div class="acts"><button class="ib" id="inst" hidden>Install</button><button class="ib" id="share" aria-label="Share this app"><span class="lbl">Share</span><span class="ic" aria-hidden="true">↗</span></button><button class="ib" id="theme" aria-label="Toggle theme">◐</button></div></header>
 <div id="off" role="status" hidden>You're offline · Your lyrics are still available</div>
 <div id="greet" hidden></div>
