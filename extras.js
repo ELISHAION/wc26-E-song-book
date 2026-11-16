@@ -7,22 +7,6 @@ const LSs = (k, v) => { try { localStorage.setItem('wc26_' + k, JSON.stringify(v
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const toast = m => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2200); };
 
-/* ===== 0. welcome letter: show the envelope on EVERY open / refresh  (set to false = only once per letter) ===== */
-const LETTER_EVERY_TIME = true;
-if (LETTER_EVERY_TIME) { try { localStorage.removeItem('wc26_letter'); } catch {} }   // forget "already read" before the app decides whether to show it
-if (LETTER_EVERY_TIME) {
-  /* On a refresh the splash screen is skipped but its element stays in the page, so the app never got a moment to open the letter.
-     This waits until the app is ready (signed in, splash finished, sign-in form closed) and then opens the letter - exactly once per page load. */
-  let done = false, tries = 0;
-  new MutationObserver(() => { if ($('#letter')) done = true; }).observe(document.body, { childList: true });   // the app opened it itself
-  const timer = setInterval(() => {
-    if (done || ++tries > 60) return clearInterval(timer);                                                       // checks for up to 24 seconds
-    const splashOn = $('#splash') && !document.documentElement.classList.contains('nosplash');
-    const btn = $('#letterBtn');
-    if (btn && !splashOn && !$('#login') && !$('#letter')) { done = true; btn.click(); }
-  }, 400);
-}
-
 /* ===== 1. colour palettes: tap ◐ to cycle ===== */
 const THEMES = [['dark', 'Ruby & Gold', '#12060a'], ['sapphire', 'Midnight Sapphire', '#050a17'], ['emerald', 'Emerald Night', '#030f0b'], ['light', 'Ivory Rose', '#fbf3ea']];
 const meta = $('meta[name=theme-color]');
@@ -59,9 +43,8 @@ document.addEventListener('visibilitychange', () => { if (wm && document.visibil
 
 async function openWorship(id) {
   if (wm) return;
-  let all; try { all = await loadSongs(); } catch { toast('Songs could not be loaded'); return; }
-  const day = (all.find(s => s.id === id) || {}).day || 1;
-  const list = all.filter(s => (s.day || 1) === day);
+  let all; try { all = (window.TLC && window.TLC.songs.length) ? window.TLC.songs : await loadSongs(); } catch { toast('Songs could not be loaded'); return; }
+  const list = (window.TLC && window.TLC.contextList(id)) || all;   // next / previous follow the Sunday list
   let i = Math.max(0, list.findIndex(s => s.id === id)), size = LSg('wm_size', 30);
   const el = wm = document.createElement('div');
   el.id = 'wm'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Worship mode');
@@ -76,7 +59,7 @@ async function openWorship(id) {
   const poke = () => { el.classList.remove('hide'); clearTimeout(hideT); hideT = setTimeout(() => el.classList.add('hide'), 5000); };
   const render = dir => {
     const s = list[i], ks = Object.keys(s.lyrics), k = keyOf(s);
-    $('.wm-t b', el).textContent = s.title; $('.wm-t small', el).textContent = `Day ${s.day || 1} · ${s.artist}`;
+    $('.wm-t b', el).textContent = s.title; $('.wm-t small', el).textContent = s.artist;
     q('lang').textContent = LABEL[k] || k; q('lang').hidden = ks.length < 2;
     ly.style.fontSize = size + 'px';
     ly.innerHTML = s.lyrics[k].split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
