@@ -1,0 +1,22 @@
+# ===== THE LORD'S CHURCH - SUNDAY SHEET =====
+# Every Sunday: copy the block below, paste it at the TOP of this file, and change it.
+# Put a line with --- (three dashes) between Sundays. Old Sundays stay in "Past Sundays".
+# songs:   one song per line starting with "- ". Write the title exactly as it shows in the app (or the song id).
+# sermon, speaker, scripture, summary: optional. Delete the sermon lines to hide the sermon card.
+# summary: you can write several lines; leave an empty line between paragraphs.
+# points:  one key point per line starting with "- ".
+# Lines starting with # are notes for you and are not shown.
+
+date: 2026-11-15
+title: Sunday Worship
+sermon:
+speaker:
+scripture:
+summary:
+points:
+songs:
+- Dhukkamulo Piluvaga
+- Na Pranam Neve
+- Naakunnadantha Neeve
+- Nee Mahimanu Choodali
+- Nee Naamamlone Maaku
