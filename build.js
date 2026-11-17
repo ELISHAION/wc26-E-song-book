@@ -48,6 +48,7 @@ for (const f of FILES) {
   if (!fs.existsSync(f)) { if (OPTIONAL.includes(f)) { console.warn('skipped missing optional file: ' + f); continue; } console.error('\nERROR: required file missing from the repo: ' + f + '\n'); process.exit(1); }
   fs.copyFileSync(f, path.join('dist', f));
 }
+for (const f of fs.readdirSync('.')) if (/^music\.[a-z0-9]+$/i.test(f)) fs.copyFileSync(f, path.join('dist', f));   // any music file you upload: music.mp3, music.m4a, music.mpeg ...
 fs.mkdirSync('dist', { recursive: true });
 if (fs.existsSync('songs.fixed.json')) { fs.copyFileSync('songs.fixed.json', 'dist/songs.json'); fs.unlinkSync('songs.fixed.json'); }
 fs.writeFileSync('dist/config.js', `window.WC_API = ${JSON.stringify(url)};
