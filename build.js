@@ -1,6 +1,6 @@
 // Vercel build step: copies the site into dist/ and writes dist/config.js from the WC_API_URL environment variable (your Google Sheet / Apps Script link).
 const fs = require('fs'), path = require('path');
-const FILES = ['index.html', 'app.js', 'extras.js', 'extras.css', 'sw.js', 'config.js', 'songs.json', 'sunday.txt', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
+const FILES = ['index.html', 'app.js', 'extras.js', 'extras.css', 'sw.js', 'config.js', 'songs.json', 'sunday.txt', 'wc-video.mp4', 'wc-video-poster.jpeg', 'wc-video-poster.jpg', 'music.mp3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'icon-maskable-512.png', 'favicon.png', 'lords-church.png', 'cormorant-garamond-italic.woff2'];
 function repairJson(t) {   // forgives the usual hand-editing slips: raw line breaks/tabs inside lyrics, trailing commas, BOM
   let o = '', inStr = false, esc = false;
@@ -35,7 +35,7 @@ if (process.env.VERCEL && !url) {
 }
 fs.rmSync('dist', { recursive: true, force: true });
 fs.mkdirSync('dist');
-const OPTIONAL = ['sunday.txt', 'extras.css', 'extras.js', 'config.js', 'icon-maskable-512.png', 'cormorant-garamond-italic.woff2'];
+const OPTIONAL = ['sunday.txt', 'wc-video.mp4', 'wc-video-poster.jpeg', 'wc-video-poster.jpg', 'music.mp3', 'extras.css', 'extras.js', 'config.js', 'icon-maskable-512.png', 'cormorant-garamond-italic.woff2'];
 try {
   const raw = fs.readFileSync('songs.json', 'utf8');
   const s = parseSongs(raw);
