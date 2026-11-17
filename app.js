@@ -112,15 +112,29 @@ function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0
 
 /* ---------- Sunday sheet views ---------- */
 const sermonHtml = w => (w.sermon || w.summary || w.points.length) ? `<section class="sm"><small class="wk-k">SERMON</small>${w.sermon ? `<h3>${esc(w.sermon)}</h3>` : ''}${(w.speaker || w.scripture) ? `<p class="sm-m">${[w.speaker, w.scripture].filter(Boolean).map(esc).join(' · ')}</p>` : ''}${w.summary ? `<div class="sm-s">${w.summary.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}${w.points.length ? `<div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}</section>` : '';
+const sermonTeaser = (w, latest) => (w.sermon || w.summary || w.points.length) ? `<a class="st" href="#/sermon${latest ? '' : '/' + esc(w.date)}"><small class="wk-k">SERMON MESSAGE</small><b>${esc(w.sermon || 'Message summary')}</b><span>${w.speaker ? esc(w.speaker) + ' · ' : ''}Read summary &amp; key points →</span></a>` : '';
 const weekHtml = (w, latest) => `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>
-${sermonHtml(w)}
+${sermonTeaser(w, latest)}
 <h2>Songs <small>${w.list.length} ${w.list.length === 1 ? 'song' : 'songs'}</small></h2>${w.list.length ? grid(w.list) : empty('♪', 'Song list coming soon', 'The songs for this Sunday will appear here.')}`;
 
+function wireVideo() {
+  const t = $('#vtoggle'), w = $('#vwrap'), v = $('#wcv'); if (!t || !w || !v) return;
+  const set = open => {
+    w.classList.toggle('open', open); w.inert = !open;
+    t.setAttribute('aria-expanded', open);
+    t.innerHTML = open ? 'Hide video <span aria-hidden="true">✕</span>' : '<span aria-hidden="true">▶</span> Watch video';
+    if (open) { if (!v.getAttribute('src')) v.src = v.dataset.src; } else v.pause();   // the video only downloads when it is opened
+  };
+  t.onclick = () => set(!w.classList.contains('open'));
+  $('#vhide').onclick = () => { set(false); t.focus({ preventScroll: true }); };
+}
 /* ---------- views ---------- */
 const views = {
   home() {
     const w = weeks[0];
     return `<section class="hero"><div class="panel"><img src="lords-church.png" alt="The Lord's Church"><div class="nm">The Lord's Church</div><p class="yr">SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
+<div class="vb"><button id="vtoggle" class="vlink" type="button" aria-expanded="false" aria-controls="vwrap"><span aria-hidden="true">▶</span> Watch video</button></div>
+<div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpeg" data-src="wc-video.mp4" aria-label="The Lord's Church video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 ${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab to browse every song.')}
 <div class="more"><a href="#/search">All songs (${songs.length}) →</a>${weeks.length > 1 ? '<a href="#/weeks">Past Sundays →</a>' : ''}</div>`;
@@ -131,6 +145,14 @@ ${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab
   week(d) {
     const w = weeks.find(x => x.date === d);
     return w ? `<a class="back" href="#/weeks">← Past Sundays</a>` + weekHtml(w, w === weeks[0]) : empty('♪', 'Sunday not found', '<a href="#/" style="color:var(--ac)">Back to home</a>');
+  },
+  sermon(d) {
+    const withS = weeks.filter(w => w.sermon || w.summary || w.points.length);
+    const head = (k, w) => `<div class="wk"><small class="wk-k">${k}</small><div class="wk-d">${esc(fmtDate(w.date))}</div></div>${sermonHtml(w)}<div class="more"><a href="#/week/${esc(w.date)}">Songs of that Sunday →</a></div>`;
+    if (d) { const w = withS.find(x => x.date === d); return w ? `<a class="back" href="#/sermon">← All messages</a>` + head('SERMON MESSAGE', w) : empty('✝', 'Message not found', '<a href="#/sermon" style="color:var(--ac)">Back to messages</a>'); }
+    if (!withS.length) return `<h2 style="margin-top:28px">Sermon</h2>` + empty('✝', 'No message summary yet', 'The sermon summary and key points will appear here after each Sunday.');
+    const [w, ...past] = withS;
+    return head('LATEST MESSAGE', w) + (past.length ? `<h2>Previous messages <small>${past.length}</small></h2>` + past.map(p => `<a class="wk-c" href="#/sermon/${esc(p.date)}"><b>${esc(p.sermon || 'Sermon message')}</b><small>${esc(fmtDate(p.date))}${p.speaker ? ' · ' + esc(p.speaker) : ''}</small><i>${p.points.length ? p.points.length + ' key points' : 'Summary'}</i></a>`).join('') : '');
   },
   search() {
     return `<div style="padding-top:24px">${searchBox('')}</div><div id="res"></div>`;
@@ -200,6 +222,7 @@ function render() {
   $('#prog').style.width = 0;
   if (name !== 'search' || !$('#q')) window.scrollTo({ top: 0, behavior: 'instant' });
   if (name === 'search') wireSearch();
+  if (name === 'home') wireVideo();
   renderGreet();
 }
 function route() { render(); }
@@ -230,11 +253,25 @@ addEventListener('online', net); addEventListener('offline', net); net();
 const API = (window.WC_API || '').trim();   // your Apps Script link (set in Vercel as WC_API_URL)
 let user = LS.g('user', null);
 const hello = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
+let music = null;
+const isPlaying = () => !!music && !music.paused;
+const DISC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width=".8" opacity=".6"/><path d="M12 3.4a8.6 8.6 0 0 1 6.1 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="3.1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="var(--bg)"/></svg>';
+function syncDisc() { const b = $('#disc'); if (!b) return; const on = isPlaying(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Pause music' : 'Play music'); }
+function toggleMusic() {
+  if (!music) {
+    music = new Audio('music.mp3'); music.loop = true; music.volume = .7; music.preload = 'none';
+    music.addEventListener('play', syncDisc); music.addEventListener('pause', syncDisc);
+    music.addEventListener('error', () => { toast('Music file not found'); music = null; syncDisc(); });
+    try { navigator.mediaSession && (navigator.mediaSession.metadata = new MediaMetadata({ title: 'Worship music', artist: "The Lord's Church", artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }] })); } catch {}
+  }
+  if (music.paused) { music.play().then(() => toast('♪ Worship music on')).catch(() => toast('Tap the disc again to play')); } else music.pause();
+}
+document.addEventListener('click', e => { if (e.target.closest('#disc')) toggleMusic(); });
 function renderGreet() {
   const g = $('#greet'); if (!g) return;
   if (!user) { g.hidden = true; return; }
   g.hidden = false;
-  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><div class="gb"><button id="out" type="button">Sign out</button></div>`;
+  g.innerHTML = `<div><b>Hi ${esc(user.username)}, ${hello()}</b><span>Praise the Lord 🙏</span></div><div class="gb"><button id="disc" class="disc${isPlaying() ? ' on' : ''}" type="button" aria-pressed="${isPlaying()}" aria-label="${isPlaying() ? 'Pause music' : 'Play music'}">${DISC}</button><button id="out" type="button">Sign out</button></div>`;
 }
 async function signInSheet(d, tries = 2) {
   const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 25000);
