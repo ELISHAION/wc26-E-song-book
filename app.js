@@ -259,7 +259,7 @@ const DISC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12
 function syncDisc() { const b = $('#disc'); if (!b) return; const on = isPlaying(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Pause music' : 'Play music'); }
 function toggleMusic() {
   if (!music) {
-    music = new Audio('music.mp3'); music.loop = true; music.volume = .7; music.preload = 'none';
+    music = new Audio('music.mpeg'); music.loop = true; music.volume = .7; music.preload = 'none';
     music.addEventListener('play', syncDisc); music.addEventListener('pause', syncDisc);
     music.addEventListener('error', () => { toast('Music file not found'); music = null; syncDisc(); });
     try { navigator.mediaSession && (navigator.mediaSession.metadata = new MediaMetadata({ title: 'Worship music', artist: "The Lord's Church", artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }] })); } catch {}
