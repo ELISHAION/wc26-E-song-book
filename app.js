@@ -132,7 +132,7 @@ function wireVideo() {
 const views = {
   home() {
     const w = weeks[0];
-    return `<section class="hero"><div class="panel"><img src="lords-church.png" alt="The Lord's Church"><div class="nm">The Lord's Church</div><p class="yr">SONGBOOK</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
+    return `<section class="hero"><div class="panel"><img src="lords-church.png" alt="The Lord's Church"><div class="nm">TLC Songs Book</div><p class="yr">THE LORD'S CHURCH</p><p class="sub">Lyrics. Anywhere. Even offline.</p></div>
 <div class="vb"><button id="vtoggle" class="vlink" type="button" aria-expanded="false" aria-controls="vwrap"><span aria-hidden="true">▶</span> Watch video</button></div>
 <div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpeg" data-src="wc-video.mp4" aria-label="The Lord's Church video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
@@ -240,7 +240,7 @@ $('#theme').onclick = () => {   // extras.js replaces this with the palette pick
 };
 $('#share').onclick = async () => {
   const url = location.origin + location.pathname;
-  const data = { title: "The Lord's Church Songbook", text: "The Lord's Church songbook — lyrics that work offline.", url };
+  const data = { title: 'TLC Songs Book', text: "TLC Songs Book — The Lord's Church lyrics that work offline.", url };
   try { if (navigator.share) { await navigator.share(data); return; } } catch (e) { if (e.name === 'AbortError') return; }
   try { await navigator.clipboard.writeText(url); toast('Link copied — send it to a friend'); } catch { prompt('Copy this link', url); }
 };
@@ -257,14 +257,27 @@ let music = null;
 const isPlaying = () => !!music && !music.paused;
 const DISC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width=".8" opacity=".6"/><path d="M12 3.4a8.6 8.6 0 0 1 6.1 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="3.1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="var(--bg)"/></svg>';
 function syncDisc() { const b = $('#disc'); if (!b) return; const on = isPlaying(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Pause music' : 'Play music'); }
+const MUSIC_FILES = ['music.mp3', 'music.m4a', 'music.mpeg'];   // the first one that exists and plays is used
+let mIdx = 0;
+function makeMusic() {
+  const a = new Audio(MUSIC_FILES[mIdx]); a.loop = true; a.volume = .7; a.preload = 'none';
+  a.addEventListener('play', syncDisc); a.addEventListener('pause', syncDisc);
+  a.addEventListener('error', async () => {
+    if (music !== a) return;
+    if (mIdx < MUSIC_FILES.length - 1) { mIdx++; music = makeMusic(); music.play().catch(() => {}); return; }   // try the next file name
+    mIdx = 0; music = null; syncDisc();
+    const found = (await Promise.all(MUSIC_FILES.map(f => fetch(f, { method: 'HEAD' }).then(r => r.ok).catch(() => false)))).some(Boolean);
+    toast(found ? "This music file can't be played on phones. Please use an MP3 file." : 'Music file not found. Upload music.mp3');
+  });
+  return a;
+}
 function toggleMusic() {
   if (!music) {
-    music = new Audio('music.mpeg'); music.loop = true; music.volume = .7; music.preload = 'none';
-    music.addEventListener('play', syncDisc); music.addEventListener('pause', syncDisc);
-    music.addEventListener('error', () => { toast('Music file not found'); music = null; syncDisc(); });
+    music = makeMusic();
     try { navigator.mediaSession && (navigator.mediaSession.metadata = new MediaMetadata({ title: 'Worship music', artist: "The Lord's Church", artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }] })); } catch {}
   }
-  if (music.paused) { music.play().then(() => toast('♪ Worship music on')).catch(() => toast('Tap the disc again to play')); } else music.pause();
+  if (music.paused) music.play().then(() => toast('♪ Worship music on')).catch(e => { if (e && e.name === 'NotAllowedError') toast('Tap the disc again to play'); });   // other errors are reported by the "error" handler above
+  else music.pause();
 }
 document.addEventListener('click', e => { if (e.target.closest('#disc')) toggleMusic(); });
 function renderGreet() {
@@ -302,7 +315,7 @@ addEventListener('online', () => { const e = $('#login .err'); if (e) e.textCont
 function showLogin() {
   if ($('#login')) return;
   const el = document.createElement('div'); el.id = 'login';
-  el.innerHTML = `<form class="lg" novalidate><img src="lords-church.png" alt=""><h1>Welcome</h1><p class="lead">Praise the Lord! Sign in once to open The Lord's Church songbook.</p>
+  el.innerHTML = `<form class="lg" novalidate><img src="lords-church.png" alt=""><h1>Welcome</h1><p class="lead">Praise the Lord! Sign in once to open TLC Songs Book.</p>
 <label>Username<input name="u" autocomplete="username" maxlength="40" required></label>
 <label>Phone number<input name="p" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="10-digit mobile number" required></label>
 <label>Email<input name="e" type="email" inputmode="email" autocomplete="email" maxlength="80" placeholder="you@example.com" required></label>
