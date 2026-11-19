@@ -52,10 +52,10 @@ function search(q) {
 }
 
 /* ---------- Sunday sheet (sunday.txt): songs of the week + sermon summary ---------- */
-const WKEYS = ['date', 'title', 'sermon', 'speaker', 'scripture', 'summary', 'points', 'songs'];
+const WKEYS = ['date', 'title', 'sermon', 'speaker', 'scripture', 'summary', 'points', 'songs', 'intro', 'image', 'youtube'];
 function parseWeeks(t) {
   return t.replace(/^\uFEFF/, '').replace(/\r/g, '').split(/^\s*---+\s*$/m).map(block => {
-    const w = { date: '', title: '', sermon: '', speaker: '', scripture: '', summary: '', points: [], songs: [] };
+    const w = { date: '', title: '', sermon: '', speaker: '', scripture: '', summary: '', points: [], songs: [], intro: '', image: '', youtube: '' };
     let k = null, any = false;
     for (const raw of block.split('\n')) {
       const l = raw.trim();
@@ -111,11 +111,23 @@ function toggleFav(id) {
 function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0, 20); LS.s('recent', recent); }
 
 /* ---------- Sunday sheet views ---------- */
-const sermonHtml = w => (w.sermon || w.summary || w.points.length) ? `<section class="sm"><small class="wk-k">SERMON</small>${w.sermon ? `<h3>${esc(w.sermon)}</h3>` : ''}${(w.speaker || w.scripture) ? `<p class="sm-m">${[w.speaker, w.scripture].filter(Boolean).map(esc).join(' · ')}</p>` : ''}${w.summary ? `<div class="sm-s">${w.summary.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}${w.points.length ? `<div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}</section>` : '';
-const sermonTeaser = (w, latest) => (w.sermon || w.summary || w.points.length) ? `<a class="st" href="#/sermon${latest ? '' : '/' + esc(w.date)}"><small class="wk-k">SERMON MESSAGE</small><b>${esc(w.sermon || 'Message summary')}</b><span>${w.speaker ? esc(w.speaker) + ' · ' : ''}Read summary &amp; key points →</span></a>` : '';
-const weekHtml = (w, latest) => `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>
-${sermonTeaser(w, latest)}
-<h2>Songs <small>${w.list.length} ${w.list.length === 1 ? 'song' : 'songs'}</small></h2>${w.list.length ? grid(w.list) : empty('♪', 'Song list coming soon', 'The songs for this Sunday will appear here.')}`;
+const hasSermon = w => !!(w.sermon || w.summary || w.points.length);
+const ICON_CHURCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1.5v4M10.2 3.2h3.6"/><path d="M12 5.8l4.2 2.6V21H7.8V8.4z"/><path d="M7.8 11.5H3.5V21h4.3M16.2 11.5h4.3V21h-4.3"/><path d="M10.3 21v-4a1.7 1.7 0 0 1 3.4 0v4M12 9.6v2.4M10.9 10.7h2.2"/></svg>';
+const ICON_MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>';
+const fmtUS = d => { const x = new Date(d + 'T00:00:00'); return isNaN(x) ? d : x.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase(); };
+const introOf = w => { if (w.intro) return w.intro; const t = (w.summary || '').split('\n\n')[0], m = /^.*?[.!?।](\s|$)/.exec(t); return (m ? m[0].trim() : t).slice(0, 140) || w.scripture; };
+function sermonCard(w, latest, inPage) {   // the "Sunday Service" card
+  const age = (Date.now() - new Date(w.date + 'T00:00:00')) / 864e5, isNew = latest && age <= 7;
+  const yt = /^https?:\/\//i.test(w.youtube) ? esc(w.youtube) : '', intro = introOf(w);
+  const btn = inPage ? '<button class="sc-btn" type="button" data-goto="smBody">Read Sermon Summary</button>' : `<a class="sc-btn" href="#/sermon${latest ? '' : '/' + esc(w.date)}">Read Sermon Summary</a>`;
+  return `<article class="sc"><div class="sc-top"><span class="sc-ico">${ICON_CHURCH}</span><span class="sc-kind">Sunday Service</span>${isNew ? '<span class="sc-new">NEW</span>' : ''}</div>
+<div class="sc-date">${esc(fmtUS(w.date))}</div><h3 class="sc-t">${esc(w.sermon || 'Sunday Message')}</h3>${intro ? `<p class="sc-i">${esc(intro)}</p>` : ''}
+<div class="sc-img"><img src="${esc(w.image || 'sermon-default.svg')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='sermon-default.svg'"><span class="sc-chip">${esc(w.speaker || "The Lord's Church")}</span></div>
+${yt ? `<a class="sc-mic" href="${yt}" target="_blank" rel="noopener noreferrer"><span class="mic">${ICON_MIC}</span><span>Pastor's Sunday Message</span><span class="go" aria-hidden="true">↗</span></a>` : ''}${btn}</article>`;
+}
+const sermonHtml = w => hasSermon(w) ? `<section class="sm" id="smBody"><small class="wk-k">SERMON SUMMARY</small>${(w.speaker || w.scripture) ? `<p class="sm-m">${[w.speaker, w.scripture].filter(Boolean).map(esc).join(' · ')}</p>` : ''}${w.summary ? `<div class="sm-s">${w.summary.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}${w.points.length ? `<div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}</section>` : '';
+const weekHtml = (w, latest) => (hasSermon(w) ? sermonCard(w, latest, false) : `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>`)
++ `\n<h2>${latest ? 'Songs for this Sunday' : 'Songs'} <small>${w.list.length} ${w.list.length === 1 ? 'song' : 'songs'}</small></h2>${w.list.length ? grid(w.list) : empty('♪', 'Song list coming soon', 'The songs for this Sunday will appear here.')}`;
 
 function wireVideo() {
   const t = $('#vtoggle'), w = $('#vwrap'), v = $('#wcv'); if (!t || !w || !v) return;
@@ -148,11 +160,11 @@ ${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab
   },
   sermon(d) {
     const withS = weeks.filter(w => w.sermon || w.summary || w.points.length);
-    const head = (k, w) => `<div class="wk"><small class="wk-k">${k}</small><div class="wk-d">${esc(fmtDate(w.date))}</div></div>${sermonHtml(w)}<div class="more"><a href="#/week/${esc(w.date)}">Songs of that Sunday →</a></div>`;
-    if (d) { const w = withS.find(x => x.date === d); return w ? `<a class="back" href="#/sermon">← All messages</a>` + head('SERMON MESSAGE', w) : empty('✝', 'Message not found', '<a href="#/sermon" style="color:var(--ac)">Back to messages</a>'); }
+    const head = (w, latest) => sermonCard(w, latest, true) + sermonHtml(w) + `<div class="more"><a href="#/week/${esc(w.date)}">Songs of that Sunday →</a></div>`;
+    if (d) { const w = withS.find(x => x.date === d); return w ? `<a class="back" href="#/sermon">← All messages</a>` + head(w, w === withS[0]) : empty('✝', 'Message not found', '<a href="#/sermon" style="color:var(--ac)">Back to messages</a>'); }
     if (!withS.length) return `<h2 style="margin-top:28px">Sermon</h2>` + empty('✝', 'No message summary yet', 'The sermon summary and key points will appear here after each Sunday.');
     const [w, ...past] = withS;
-    return head('LATEST MESSAGE', w) + (past.length ? `<h2>Previous messages <small>${past.length}</small></h2>` + past.map(p => `<a class="wk-c" href="#/sermon/${esc(p.date)}"><b>${esc(p.sermon || 'Sermon message')}</b><small>${esc(fmtDate(p.date))}${p.speaker ? ' · ' + esc(p.speaker) : ''}</small><i>${p.points.length ? p.points.length + ' key points' : 'Summary'}</i></a>`).join('') : '');
+    return head(w, true) + (past.length ? `<h2>Previous messages <small>${past.length}</small></h2>` + past.map(p => `<a class="wk-c" href="#/sermon/${esc(p.date)}"><b>${esc(p.sermon || 'Sermon message')}</b><small>${esc(fmtDate(p.date))}${p.speaker ? ' · ' + esc(p.speaker) : ''}</small><i>${p.points.length ? p.points.length + ' key points' : 'Summary'}</i></a>`).join('') : '');
   },
   search() {
     return `<div style="padding-top:24px">${searchBox('')}</div><div id="res"></div>`;
@@ -204,6 +216,7 @@ function wireSearch() {
   };
   q.addEventListener('input', run); run(); q.focus({ preventScroll: true });
 }
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { const t = document.getElementById(g.dataset.goto); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
 document.addEventListener('click', e => {
   const f = e.target.closest('[data-fav]'); if (f) { e.preventDefault(); toggleFav(f.dataset.fav); return; }
   const c = e.target.closest('#clr'); if (c) { const q = $('#q'); q.value = ''; q.dispatchEvent(new Event('input')); q.focus(); return; }
