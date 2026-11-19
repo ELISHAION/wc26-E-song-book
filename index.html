@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>TLC Songs Book</title>
 <meta name="description" content="TLC Songs Book - The Lord's Church. Search and read lyrics anywhere, even offline.">
-<meta name="apple-mobile-web-app-title" content="TLC Songs">
+<meta name="apple-mobile-web-app-title" content="TLC Songs Book">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -223,6 +223,26 @@ img{max-width:100%}
 #greet .disc.on svg{animation:spin 2.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:899px){.nav{gap:0}.nav a{flex:1;min-width:0;padding:6px 2px}}
+/* ===== Sunday Service card ===== */
+.sc{--c-bg:#12303b;--c-cream:#e8d5a8;position:relative;margin:22px 0 4px;padding:24px 20px 20px;border-radius:30px;background:var(--c-bg);color:#fff;font-family:var(--sans);box-shadow:0 24px 60px -30px rgba(0,0,0,.9),0 0 0 1px rgba(232,213,168,.12)}
+.sc-top{display:flex;align-items:center;gap:12px}
+.sc-ico{width:36px;height:36px;color:var(--c-cream);flex:none;display:grid;place-items:center}.sc-ico svg{width:34px;height:34px}
+.sc-kind{font-weight:800;font-size:clamp(19px,5.2vw,25px);letter-spacing:.01em;text-transform:uppercase;line-height:1.1}
+.sc-new{margin-left:auto;padding:6px 14px;border-radius:99px;background:#0b4a2e;color:#1ddc74;font-weight:700;font-size:14px;letter-spacing:.05em}
+.sc-date{margin:20px 0 6px;color:#e2cf9f;font-weight:600;letter-spacing:.02em;font-size:16px}
+.sc-t{margin:0;font-size:clamp(27px,8vw,38px);line-height:1.18;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+.sc-i{margin:12px 0 0;color:#c9d6db;font-size:17px;line-height:1.45;overflow-wrap:anywhere}
+.sc-img{position:relative;margin:18px 0 0;border-radius:22px;overflow:hidden;aspect-ratio:16/9;background:#1b3a46}
+.sc-img img{display:block;width:100%;height:100%;object-fit:cover}
+.sc-chip{position:absolute;left:12px;bottom:12px;max-width:calc(100% - 24px);padding:8px 16px;border-radius:99px;background:rgba(18,14,12,.72);color:#fff;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.sc-mic{display:flex;align-items:center;gap:12px;margin:18px 2px 14px;color:#fff;font-size:18px;text-decoration:none}
+.sc-mic .mic{display:grid;place-items:center;width:28px;height:28px;color:#cfd8dc;flex:none}.sc-mic .mic svg{width:26px;height:26px}
+.sc-mic .go{margin-left:auto;color:var(--c-cream);font-size:20px}
+.sc-mic:hover>span:nth-child(2){text-decoration:underline;text-underline-offset:4px}
+.sc-btn{display:block;width:100%;margin-top:16px;padding:18px 14px;border-radius:20px;border:0;background:linear-gradient(180deg,#eedfb9,#e3cf9e);color:#12303b;font:800 clamp(18px,5vw,21px)/1.2 var(--sans);text-align:center;cursor:pointer;transition:transform .15s,filter .2s}
+.sc-mic+.sc-btn{margin-top:0}
+.sc-btn:hover{filter:brightness(1.04)}.sc-btn:active{transform:scale(.98)}
+.sm{scroll-margin-top:84px}
 </style>
 <link rel="stylesheet" href="extras.css">
 </head>
