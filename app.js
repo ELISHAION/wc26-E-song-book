@@ -152,7 +152,7 @@ function sermonHtml(w) {
   const pts = w.points.length ? `<div class="sm"><div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div></div>` : '';
   return `<div class="smw" id="smBody">${top}${vs}${secs}${pts}</div>`;
 }
-const weekHtml = (w, latest) => (hasSermon(w) ? sermonCard(w, latest, false) : `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>`)
+const weekHtml = (w, latest, noSermon) => (hasSermon(w) && !noSermon ? sermonCard(w, latest, false) : `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>`)
 + `\n<h2>${latest ? 'Songs for this Sunday' : 'Songs'} <small>${w.list.length} ${w.list.length === 1 ? 'song' : 'songs'}</small></h2>${w.list.length ? grid(w.list) : empty('♪', 'Song list coming soon', 'The songs for this Sunday will appear here.')}`;
 
 function wireVideo() {
@@ -204,7 +204,7 @@ const views = {
 <div class="vb"><button id="vtoggle" class="vlink" type="button" aria-expanded="false" aria-controls="vwrap"><span aria-hidden="true">▶</span> Watch video</button></div>
 <div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpeg" data-src="wc-video.mp4" aria-label="The Lord's Church video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
-${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab to browse every song.')}
+${w ? weekHtml(w, true, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab to browse every song.')}
 <div class="more"><a href="#/search">All songs (${songs.length}) →</a>${weeks.length > 1 ? '<a href="#/weeks">Past Sundays →</a>' : ''}</div>`;
   },
   weeks() {
