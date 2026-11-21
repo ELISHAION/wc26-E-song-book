@@ -1,22 +1,61 @@
-# ===== THE LORD'S CHURCH - SUNDAY SHEET =====
-# Every Sunday: copy the block below, paste it at the TOP of this file, and change it.
-# Put a line with --- (three dashes) between Sundays. Old Sundays stay in "Past Sundays".
-# songs:   one song per line starting with "- ". Write the title exactly as it shows in the app (or the song id).
-# sermon, speaker, scripture, summary: optional. Delete the sermon lines to hide the sermon card.
-# summary: you can write several lines; leave an empty line between paragraphs.
-# points:  one key point per line starting with "- ".
-# Lines starting with # are notes for you and are not shown.
+# ===== EXAMPLE ONLY - not published. Copy the parts you need into sunday.txt and replace the text with your own. =====
+# This example follows the layout of the sermon notes (headline, subheading, verses, numbered sections, note, conclusion).
+# HOW THE FIELDS SHOW IN THE APP
+#   sermon:       the big headline (topic)
+#   subheading:   the line under the headline
+#   series:       replaces the words "SUNDAY SERVICE" at the top of the card (e.g. a prayer series / day number)
+#   speaker:      name of the preacher
+#   scripture:    main reference
+#   image:        a picture path (sermons/day17.jpg), or  image: none  for a text-only card
+#   youtube:      link opened by "Pastor's Sunday Message"
+#   summary:      opening paragraphs (leave an empty line between paragraphs)
+#   verses:       verse boxes, one per line starting with "- "  ->  Reference - verse text
+#   section:      a numbered card. Under it:  "- text" = tick-mark point, plain line = paragraph,
+#                 "verse: Reference - text" = verse box, "note: text" = highlighted note
+#   conclusion:   the last card (no number)
+#   points:       optional short numbered list of key points
+# The numbers 1. 2. 3. in a section title are optional - the app numbers the sections itself.
 
 date: 2026-11-15
-title: Sunday Worship
-sermon:
-speaker:
-scripture:
-summary:
+series: Consecration Prayer · Day 17
+sermon: శ్రమలు దేవుని చిత్తానికి రుజువు
+subheading: పోరాటాలు దేవుని ప్రణాళికకు సంకేతం
+speaker: Ps. Jessy Paul Gaaru
+scripture: Romans 8:28
+image: none
+youtube:
+summary: Trials are not a sign that God has left us. They are a sign that His process of shaping us has begun.
+
+The enemy wants us to give up prayer and God's Word when we are discouraged.
+verses:
+- John 16:33 - In the world ye shall have tribulation: but be of good cheer; I have overcome the world.
+- Romans 8:28 - And we know that all things work together for good to them that love God, to them who are the called according to his purpose.
+section: 1. Increased Attacks / Spiritual Opposition
+- The enemy comes to tempt us, to sift our heart and our family.
+- The enemy targets those who have surrendered their lives to Jesus.
+- When we are chosen for God, we become partakers in suffering.
+section: 2. Testing Character and Refining
+- God allows hardship to test our faith and patience.
+- Joseph went through loneliness and betrayal, yet he did not lose hope.
+- God is testing our character. He is purifying you like gold.
+note: If you need the power of God, you need to go through the loneliness.
+section: 3. Divine Separation and Isolation
+- Being set apart from the world for God's purpose.
+- Solitude is needed to know God's character and His will.
+- It is a growing and strengthening experience.
+section: 4. Development in Darkness
+A photo is developed in the darkroom. In the same way, God's truth is formed in us during dark seasons.
+verse: Psalm 139:12 - Yea, the darkness hideth not from thee; but the night shineth as the day.
+section: 5. An Expiry Date on Suffering
+- Every trial has a time limit set by God.
+- This spiritual battle will end, and God will restore and bless us.
+conclusion: Conclusion
+- Guard your faith and your faithfulness during trials.
+- Do not despair in the dark and lonely season. God is preparing you.
 points:
+- Trials are proof that we are in God's will
+- God shapes us in the dark
+- Every trial has an expiry date
 songs:
-- Dhukkamulo Piluvaga
 - Na Pranam Neve
-- Naakunnadantha Neeve
 - Nee Mahimanu Choodali
-- Nee Naamamlone Maaku
