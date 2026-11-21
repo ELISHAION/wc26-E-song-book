@@ -10,7 +10,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const main = $('#main');
 let songs = [], by = {}, index = [], weeks = [];
-let favs = LS.g('favs', []), recent = LS.g('recent', []);
+let favs = LS.g('favs', []);
 const LABEL = { te: 'తెలుగు', rom: 'English', en: 'Lyrics' };
 
 /* ---------- song library (songs.json) ---------- */
@@ -52,29 +52,36 @@ function search(q) {
 }
 
 /* ---------- Sunday sheet (sunday.txt): songs of the week + sermon summary ---------- */
-const WKEYS = ['date', 'title', 'sermon', 'speaker', 'scripture', 'summary', 'points', 'songs', 'intro', 'image', 'youtube'];
+const WKEYS = ['date', 'title', 'sermon', 'subheading', 'intro', 'series', 'speaker', 'scripture', 'summary', 'points', 'verses', 'songs', 'image', 'youtube', 'section', 'conclusion'];
+const BUL = /^[-•*]\s*/;
+function splitVerse(v) { const m = /^(.{2,70}?)\s+[—–|-]\s+(.+)$/.exec(v); return m ? { ref: m[1].trim(), text: m[2].trim() } : { ref: '', text: v }; }   // "John 3:16 — For God so loved..."
 function parseWeeks(t) {
   return t.replace(/^\uFEFF/, '').replace(/\r/g, '').split(/^\s*---+\s*$/m).map(block => {
-    const w = { date: '', title: '', sermon: '', speaker: '', scripture: '', summary: '', points: [], songs: [], intro: '', image: '', youtube: '' };
-    let k = null, any = false;
+    const w = { date: '', title: '', sermon: '', subheading: '', series: '', speaker: '', scripture: '', summary: '', points: [], verses: [], sections: [], songs: [], image: '', youtube: '' };
+    let k = null, sec = null, any = false;
     for (const raw of block.split('\n')) {
       const l = raw.trim();
-      if (l.startsWith('#')) continue;                                   // comment line
-      const m = /^([a-z]+)\s*:\s*(.*)$/i.exec(l);
-      if (m && WKEYS.includes(m[1].toLowerCase())) {
-        k = m[1].toLowerCase(); any = true; const v = m[2].trim();
-        if (k === 'points' || k === 'songs') { if (v) w[k].push(v.replace(/^[-•*]\s*/, '')); } else w[k] = v;
+      if (l.startsWith('#')) continue;                                    // comment line
+      const m = /^([a-z]+)\s*:\s*(.*)$/i.exec(l), key = m && m[1].toLowerCase(), v = m ? m[2].trim() : '';
+      if (sec && (key === 'verse' || key === 'note')) { sec.items.push(key === 'note' ? { t: 'n', text: v } : { t: 'v', ...splitVerse(v) }); continue; }   // verse: / note: only inside a section
+      if (m && WKEYS.includes(key)) {
+        any = true; k = key;
+        if (key === 'section' || key === 'conclusion') { sec = { type: key, title: v, items: [] }; w.sections.push(sec); continue; }
+        sec = null;
+        if (key === 'points' || key === 'songs' || key === 'verses') { if (v) w[key].push(v.replace(BUL, '')); }
+        else w[key === 'intro' ? 'subheading' : key] = v;
         continue;
       }
       if (!k) continue;
-      if (k === 'points' || k === 'songs') { if (l) w[k].push(l.replace(/^[-•*]\s*/, '')); }
+      if (sec) { if (l) sec.items.push(BUL.test(l) ? { t: 'b', text: l.replace(BUL, '') } : { t: 'p', text: l }); }
+      else if (k === 'points' || k === 'songs' || k === 'verses') { if (l) w[k].push(l.replace(BUL, '')); }
       else if (k === 'summary') {
         if (l) w.summary += (w.summary === '' || w.summary.endsWith('\n\n') ? '' : ' ') + l;
         else if (w.summary && !w.summary.endsWith('\n\n')) w.summary += '\n\n';
       }
     }
     w.summary = w.summary.trim();
-    return any && (w.date || w.songs.length || w.sermon || w.summary) ? w : null;
+    return any && (w.date || w.songs.length || w.sermon || w.summary || w.sections.length) ? w : null;
   }).filter(Boolean);
 }
 async function loadWeeks() {
@@ -101,31 +108,50 @@ const empty = (em, t, d) => `<div class="empty"><span class="em" aria-hidden="tr
 const searchBox = v => `<label class="sb"><span aria-hidden="true">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search songs, artists..." aria-label="Search songs" value="${esc(v)}">${v ? '<button id="clr" aria-label="Clear search">✕</button>' : ''}</label>`;
 function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2200); }
 
-/* ---------- favorites / recent ---------- */
+/* ---------- favorites ---------- */
 function toggleFav(id) {
   favs = isFav(id) ? favs.filter(x => x !== id) : [id, ...favs];
   LS.s('favs', favs);
   document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => { b.classList.toggle('on', isFav(id)); b.setAttribute('aria-pressed', isFav(id)); });
   if (location.hash === '#/favs') route();
 }
-function pushRecent(id) { recent = [id, ...recent.filter(x => x !== id)].slice(0, 20); LS.s('recent', recent); }
 
 /* ---------- Sunday sheet views ---------- */
-const hasSermon = w => !!(w.sermon || w.summary || w.points.length);
+const hasSermon = w => !!(w.sermon || w.summary || w.subheading || w.points.length || w.verses.length || w.sections.length);
 const ICON_CHURCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1.5v4M10.2 3.2h3.6"/><path d="M12 5.8l4.2 2.6V21H7.8V8.4z"/><path d="M7.8 11.5H3.5V21h4.3M16.2 11.5h4.3V21h-4.3"/><path d="M10.3 21v-4a1.7 1.7 0 0 1 3.4 0v4M12 9.6v2.4M10.9 10.7h2.2"/></svg>';
 const ICON_MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>';
 const fmtUS = d => { const x = new Date(d + 'T00:00:00'); return isNaN(x) ? d : x.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase(); };
-const introOf = w => { if (w.intro) return w.intro; const t = (w.summary || '').split('\n\n')[0], m = /^.*?[.!?।](\s|$)/.exec(t); return (m ? m[0].trim() : t).slice(0, 140) || w.scripture; };
+const introOf = w => { if (w.subheading) return w.subheading; const t = (w.summary || '').split('\n\n')[0], m = /^.*?[.!?।](\s|$)/.exec(t); return (m ? m[0].trim() : t).slice(0, 140) || w.scripture; };
 function sermonCard(w, latest, inPage) {   // the "Sunday Service" card
   const age = (Date.now() - new Date(w.date + 'T00:00:00')) / 864e5, isNew = latest && age <= 7;
-  const yt = /^https?:\/\//i.test(w.youtube) ? esc(w.youtube) : '', intro = introOf(w);
+  const yt = /^https?:\/\//i.test(w.youtube) ? esc(w.youtube) : '', intro = introOf(w), noImg = /^(none|no|off)$/i.test(w.image);
   const btn = inPage ? '<button class="sc-btn" type="button" data-goto="smBody">Read Sermon Summary</button>' : `<a class="sc-btn" href="#/sermon${latest ? '' : '/' + esc(w.date)}">Read Sermon Summary</a>`;
-  return `<article class="sc"><div class="sc-top"><span class="sc-ico">${ICON_CHURCH}</span><span class="sc-kind">Sunday Service</span>${isNew ? '<span class="sc-new">NEW</span>' : ''}</div>
-<div class="sc-date">${esc(fmtUS(w.date))}</div><h3 class="sc-t">${esc(w.sermon || 'Sunday Message')}</h3>${intro ? `<p class="sc-i">${esc(intro)}</p>` : ''}
-<div class="sc-img"><img src="${esc(w.image || 'sermon-default.svg')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='sermon-default.svg'"><span class="sc-chip">${esc(w.speaker || "The Lord's Church")}</span></div>
+  return `<article class="sc"><div class="sc-top"><span class="sc-ico">${ICON_CHURCH}</span><span class="sc-kind">${esc(w.series || 'Sunday Service')}</span>${isNew ? '<span class="sc-new">NEW</span>' : ''}</div>
+<div class="sc-date">${esc(fmtUS(w.date))}${w.speaker && noImg ? ' · ' + esc(w.speaker) : ''}</div><h3 class="sc-t">${esc(w.sermon || 'Sunday Message')}</h3>${intro ? `<p class="sc-i">${esc(intro)}</p>` : ''}
+${noImg ? '' : `<div class="sc-img"><img src="${esc(w.image || 'sermon-default.svg')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='sermon-default.svg'"><span class="sc-chip">${esc(w.speaker || "The Lord's Church")}</span></div>`}
 ${yt ? `<a class="sc-mic" href="${yt}" target="_blank" rel="noopener noreferrer"><span class="mic">${ICON_MIC}</span><span>Pastor's Sunday Message</span><span class="go" aria-hidden="true">↗</span></a>` : ''}${btn}</article>`;
 }
-const sermonHtml = w => hasSermon(w) ? `<section class="sm" id="smBody"><small class="wk-k">SERMON SUMMARY</small>${(w.speaker || w.scripture) ? `<p class="sm-m">${[w.speaker, w.scripture].filter(Boolean).map(esc).join(' · ')}</p>` : ''}${w.summary ? `<div class="sm-s">${w.summary.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}${w.points.length ? `<div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}</section>` : '';
+const stripNo = s => s.replace(/^\s*\d+[.)]\s*/, '');
+const verseHtml = v => { const o = typeof v === 'string' ? splitVerse(v) : v; return `<blockquote class="vq">${o.ref ? `<b>${esc(o.ref)}</b>` : ''}<span>${esc(o.text)}</span></blockquote>`; };
+function itemsHtml(items) {
+  let out = '', open = false;
+  for (const it of items) {
+    if (it.t === 'b') { if (!open) { out += '<ul class="sx-b">'; open = true; } out += `<li>${esc(it.text)}</li>`; continue; }
+    if (open) { out += '</ul>'; open = false; }
+    out += it.t === 'v' ? verseHtml(it) : it.t === 'n' ? `<div class="nt"><span aria-hidden="true">✦</span><span>${esc(it.text)}</span></div>` : `<p>${esc(it.text)}</p>`;
+  }
+  return out + (open ? '</ul>' : '');
+}
+const sectionHtml = (s, n) => `<article class="sx${s.type === 'conclusion' ? ' cl' : ''}"><div class="sx-h"><span class="sx-n" aria-hidden="true">${s.type === 'conclusion' ? '✓' : n}</span><h4>${esc(stripNo(s.title) || (s.type === 'conclusion' ? 'Conclusion' : 'Message'))}</h4></div><div class="sx-c">${itemsHtml(s.items)}</div></article>`;
+function sermonHtml(w) {
+  if (!hasSermon(w)) return '';
+  let n = 0;
+  const top = (w.speaker || w.scripture || w.summary) ? `<div class="sm"><small class="wk-k">SERMON SUMMARY</small>${(w.speaker || w.scripture) ? `<p class="sm-m">${[w.speaker, w.scripture].filter(Boolean).map(esc).join(' · ')}</p>` : ''}${w.summary ? `<div class="sm-s">${w.summary.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}</div>` : '';
+  const vs = w.verses.length ? `<div class="vs"><small class="wk-k">VERSES</small>${w.verses.map(verseHtml).join('')}</div>` : '';
+  const secs = w.sections.map(s => sectionHtml(s, s.type === 'conclusion' ? 0 : ++n)).join('');
+  const pts = w.points.length ? `<div class="sm"><div class="sm-p"><b>Key points</b><ol>${w.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div></div>` : '';
+  return `<div class="smw" id="smBody">${top}${vs}${secs}${pts}</div>`;
+}
 const weekHtml = (w, latest) => (hasSermon(w) ? sermonCard(w, latest, false) : `<div class="wk"><small class="wk-k">${latest ? 'THIS SUNDAY' : 'SUNDAY SHEET'}</small><div class="wk-d">${esc(fmtDate(w.date))}</div>${w.title ? `<p class="wk-t">${esc(w.title)}</p>` : ''}</div>`)
 + `\n<h2>${latest ? 'Songs for this Sunday' : 'Songs'} <small>${w.list.length} ${w.list.length === 1 ? 'song' : 'songs'}</small></h2>${w.list.length ? grid(w.list) : empty('♪', 'Song list coming soon', 'The songs for this Sunday will appear here.')}`;
 
@@ -179,7 +205,7 @@ const views = {
 <div id="vwrap" class="vwrap" inert><div class="vin"><video id="wcv" controls playsinline preload="none" poster="wc-video-poster.jpeg" data-src="wc-video.mp4" aria-label="The Lord's Church video"></video><div class="vfoot"><button id="vhide" class="vlink" type="button">Hide video ✕</button></div></div></div>
 <a href="#/search" class="sb" aria-label="Search songs"><span aria-hidden="true">⌕</span><span style="color:var(--mut);font-size:17px">Search songs, artists...</span></a></section>
 ${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab to browse every song.')}
-<div class="more"><a href="#/search">All songs (${songs.length}) →</a>${weeks.length > 1 ? '<a href="#/weeks">Past Sundays →</a>' : ''}<a href="#/recent">Recently viewed →</a></div>`;
+<div class="more"><a href="#/search">All songs (${songs.length}) →</a>${weeks.length > 1 ? '<a href="#/weeks">Past Sundays →</a>' : ''}</div>`;
   },
   weeks() {
     return `<h2 style="margin-top:28px">Past Sundays</h2>` + (weeks.length ? weeks.map(w => `<a class="wk-c" href="#/week/${esc(w.date)}"><b>${esc(fmtDate(w.date))}</b><small>${esc(w.sermon || w.title || 'Sunday Worship')}</small><i>${w.list.length} songs</i></a>`).join('') : empty('◷', 'Nothing here yet', 'Sunday sheets will be listed here.'));
@@ -202,10 +228,6 @@ ${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab
   favs() {
     const a = favs.map(i => by[i]).filter(Boolean);
     return `<h2 style="margin-top:28px">Your Favorites</h2>` + (a.length ? grid(a) : empty('♡', 'No favorites yet', 'Tap the heart on any song and it will be saved here — even offline.'));
-  },
-  recent() {
-    const a = recent.map(i => by[i]).filter(Boolean);
-    return `<h2 style="margin-top:28px">Recently Viewed</h2>` + (a.length ? grid(a) : empty('◷', 'Nothing viewed yet', 'Songs you open will show up here for quick access.'));
   },
   bible(id, c) {
     const lang = LS.g('blang', 'te'), b = BK[id];
@@ -236,7 +258,6 @@ ${w ? weekHtml(w, true) : empty('♪', 'No Sunday list yet', 'Open the Songs tab
   song(id) {
     const s = by[id];
     if (!s) return empty('♪', 'Song not found', '<a href="#/" style="color:var(--ac)">Back to home</a>');
-    pushRecent(id);
     const keys = Object.keys(s.lyrics);
     const sib = contextList(id), si = sib.findIndex(x => x.id === id), pv = sib[si - 1], nx = sib[si + 1];
     let k = LS.g('lang', keys[0]); if (!keys.includes(k)) k = keys[0];
@@ -286,7 +307,7 @@ function render() {
   const v = views[name] || views.home;
   main.style.animation = 'none'; main.offsetHeight; main.style.animation = '';
   main.innerHTML = v(id ? decodeURIComponent(id) : undefined, id2 ? decodeURIComponent(id2) : undefined);
-  const tab = { song: 'home', week: 'home', weeks: 'home', recent: 'home' }[name] || name;
+  const tab = { song: 'home', week: 'home', weeks: 'home' }[name] || name;
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.r === tab));
   $('#prog').style.width = 0;
   if (name !== 'search' || !$('#q')) window.scrollTo({ top: 0, behavior: 'instant' });
