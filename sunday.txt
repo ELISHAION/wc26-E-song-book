@@ -16,8 +16,8 @@
 #   points:       optional short numbered list of key points
 # The numbers 1. 2. 3. in a section title are optional - the app numbers the sections itself.
 
-date: 2026-11-15
-series: Consecration Prayer · Day 17
+date: 2026-11-21
+series: 
 sermon: శ్రమలు దేవుని చిత్తానికి రుజువు
 subheading: పోరాటాలు దేవుని ప్రణాళికకు సంకేతం
 speaker: Ps. Jessy Paul Gaaru
