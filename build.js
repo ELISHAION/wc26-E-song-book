@@ -1,6 +1,6 @@
 // Vercel build step: copies the site into dist/ and writes dist/config.js from the WC_API_URL environment variable (your Google Sheet / Apps Script link).
 const fs = require('fs'), path = require('path');
-const FILES = ['index.html', 'app.js', 'extras.js', 'extras.css', 'sw.js', 'config.js', 'songs.json', 'sunday.txt', 'sermon-default.svg', 'privacy.html', 'wc-video.mp4', 'wc-video-poster.jpeg', 'wc-video-poster.jpg', 'music.mp3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
+const FILES = ['index.html', 'app.js', 'extras.js', 'extras.css', 'bible.css', 'sw.js', 'config.js', 'songs.json', 'sunday.txt', 'sermon-default.svg', 'privacy.html', 'wc-video.mp4', 'wc-video-poster.jpeg', 'wc-video-poster.jpg', 'music.mp3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'icon-maskable-512.png', 'favicon.png', 'lords-church.png', 'cormorant-garamond-italic.woff2'];
 function repairJson(t) {   // forgives the usual hand-editing slips: raw line breaks/tabs inside lyrics, trailing commas, BOM
   let o = '', inStr = false, esc = false;
@@ -35,7 +35,7 @@ if (process.env.VERCEL && !url) {
 }
 fs.rmSync('dist', { recursive: true, force: true });
 fs.mkdirSync('dist');
-const OPTIONAL = ['sunday.txt', 'sermon-default.svg', 'privacy.html', 'wc-video.mp4', 'wc-video-poster.jpeg', 'wc-video-poster.jpg', 'music.mp3', 'extras.css', 'extras.js', 'config.js', 'icon-maskable-512.png', 'cormorant-garamond-italic.woff2'];
+const OPTIONAL = ['sunday.txt', 'sermon-default.svg', 'privacy.html', 'wc-video.mp4', 'wc-video-poster.jpeg', 'wc-video-poster.jpg', 'music.mp3', 'extras.css', 'extras.js', 'bible.css', 'config.js', 'icon-maskable-512.png', 'cormorant-garamond-italic.woff2'];
 try {
   const raw = fs.readFileSync('songs.json', 'utf8');
   const s = parseSongs(raw);
@@ -49,6 +49,7 @@ for (const f of FILES) {
   fs.copyFileSync(f, path.join('dist', f));
 }
 if (fs.existsSync('sermons')) fs.cpSync('sermons', 'dist/sermons', { recursive: true });   // sermon pictures: sermons/nov15.jpg
+if (fs.existsSync('bible')) fs.cpSync('bible', 'dist/bible', { recursive: true });         // Bible books: bible/te/JHN.json, bible/en/JHN.json
 if (fs.existsSync('.well-known')) fs.cpSync('.well-known', 'dist/.well-known', { recursive: true });   // Digital Asset Links for the Play Store app
 for (const f of fs.readdirSync('.')) if (/^music\.[a-z0-9]+$/i.test(f)) fs.copyFileSync(f, path.join('dist', f));   // any music file you upload: music.mp3, music.m4a, music.mpeg ...
 fs.mkdirSync('dist', { recursive: true });
