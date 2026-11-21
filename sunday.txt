@@ -57,5 +57,5 @@ points:
 - God shapes us in the dark
 - Every trial has an expiry date
 songs:
-- Na Pranam Neve
-- Nee Mahimanu Choodali
+- Sthothram Chellinthumu
+- 
