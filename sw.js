@@ -1,4 +1,4 @@
-const V='wc26-v41',B='wc26-bible',SHELL=['./','index.html','app.js','extras.js','extras.css','bible.css','songs.json','manifest.webmanifest','config.js','icon-192.png','icon-512.png','icon-maskable-512.png','favicon.png','lords-church.png','cormorant-garamond-italic.woff2'];
+const V='wc26-v42',B='wc26-bible',SHELL=['./','index.html','app.js','extras.js','extras.css','bible.css','songs.json','manifest.webmanifest','config.js','icon-192.png','icon-512.png','icon-maskable-512.png','favicon.png','lords-church.png','cormorant-garamond-italic.woff2'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V&&x!==B).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 // Songs, the Sunday sheet and settings: always the newest copy when online (4 s limit), the saved copy when offline
