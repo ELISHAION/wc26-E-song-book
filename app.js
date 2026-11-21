@@ -187,13 +187,97 @@ function bibleNav(id, c) {
   const lbl = (p, ar) => { const x = BK[p[0]]; const t = `${x.te} ${p[1]}`; return `<a href="#/bible/${p[0]}/${p[1]}">${ar ? '' : '← '}${esc(t)}${ar ? ' →' : ''}</a>`; };
   return `<nav class="pn" aria-label="Previous and next chapter">${prev ? lbl(prev) : '<span></span>'}${next ? lbl(next, 1) : ''}</nav>`;
 }
+/* Bible tools: verse cards, highlight, notes, share. Saved on this phone, work offline. */
+let bhl = LS.g('bhl', {}), bnotes = LS.g('bnotes', {}), bctx = null;   // bctx = { id, c, lang, vs, sel } for the chapter on screen
+const HL = { y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink' }, VERSION = { te: 'IRV', en: 'WEB' };
+const vkey = (id, c, v) => `${id}.${c}.${v}`;   // same highlight/note in Telugu and English
+function bRef() {   // "John 3:16-18" or "John 3:16, 18"
+  const { id, c, lang, sel } = bctx, ns = [...sel].sort((x, y) => x - y), parts = [];
+  let a = ns[0], p = a;
+  for (let i = 1; i <= ns.length; i++) { const n = ns[i]; if (n === p + 1) { p = n; continue; } parts.push(a === p ? '' + a : a + '-' + p); a = p = n; }
+  return `${bName(BK[id], lang)} ${c}:${parts.join(', ')}`;
+}
+function bText() {
+  const { lang, vs, sel } = bctx, ns = [...sel].sort((x, y) => x - y);
+  const body = ns.length === 1 ? `“${vs[ns[0] - 1]}”` : ns.map(n => `${n} ${vs[n - 1]}`).join('\n');
+  return `${body}\n\n— ${bRef()} (${VERSION[lang]})\nTLC Songs Book`;
+}
+function paintVerses() {
+  const box = $('#bv'); if (!box || !bctx) return;
+  const { id, c, vs, sel } = bctx;
+  box.innerHTML = vs.map((t, i) => {
+    if (!t) return '';
+    const n = i + 1, k = vkey(id, c, n), h = bhl[k], note = bnotes[k];
+    return `<article class="bvc${h ? ' h-' + h : ''}${sel.has(n) ? ' sel' : ''}" data-v="${n}" tabindex="0" role="button" aria-pressed="${sel.has(n)}"><span class="bvn">${n}</span><div class="bvt"><p>${esc(t)}</p>${note ? `<div class="bnote"><span aria-hidden="true">✎</span> ${esc(note)}</div>` : ''}</div></article>`;
+  }).join('');
+  updateBar();
+}
+function updateBar() {
+  const bar = $('#bbar'); if (!bar) return;
+  if (!bctx || !bctx.sel.size) { bar.hidden = true; bar.innerHTML = ''; return; }
+  bar.hidden = false;
+  bar.innerHTML = `<div class="bb-t"><b>${esc(bRef())}</b><button type="button" data-ba="x" aria-label="Deselect">✕</button></div><div class="bb-r"><div class="bb-c">${Object.keys(HL).map(k => `<button type="button" class="hlc c-${k}" data-ba="hl" data-c="${k}" aria-label="${HL[k]} highlight"></button>`).join('')}</div><button type="button" data-ba="note">✎ Note</button><button type="button" data-ba="share">↗ Share</button><button type="button" data-ba="copy">⧉ Copy</button><button type="button" data-ba="clear">⌫ Clear</button></div>`;
+}
+function openNote(n) {
+  const { id, c, lang } = bctx, k = vkey(id, c, n), old = bnotes[k] || '';
+  const el = document.createElement('div'); el.className = 'bsheet';
+  el.innerHTML = `<div class="bs-in" role="dialog" aria-label="Verse note"><b>${esc(bName(BK[id], lang))} ${c}:${n}</b><textarea maxlength="1000" placeholder="Write your note…">${esc(old)}</textarea><div class="bs-a">${old ? '<button type="button" data-s="del">Delete</button>' : ''}<button type="button" data-s="cancel">Cancel</button><button type="button" class="pri" data-s="save">Save</button></div></div>`;
+  document.body.append(el);
+  const ta = $('textarea', el); ta.focus();
+  el.onclick = e => {
+    const a = e.target.closest('[data-s]');
+    if (e.target === el || (a && a.dataset.s === 'cancel')) { el.remove(); return; }
+    if (!a) return;
+    if (a.dataset.s === 'del') delete bnotes[k];
+    else { const v = ta.value.trim(); if (v) bnotes[k] = v; else delete bnotes[k]; }
+    LS.s('bnotes', bnotes); el.remove();
+    if (bctx) { bctx.sel.clear(); paintVerses(); }
+    toast(a.dataset.s === 'del' ? 'Note deleted' : 'Note saved');
+  };
+}
+async function bCopy(share) {
+  const t = bText();
+  try { if (share && navigator.share) { await navigator.share({ text: t }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(t); toast(share ? 'Verse copied — paste it anywhere' : 'Copied'); } catch { prompt('Copy this verse', t); }
+}
+document.addEventListener('click', e => {
+  if (!bctx) return;
+  const a = e.target.closest('[data-ba]');
+  if (a) {
+    const { id, c, sel } = bctx, ns = [...sel], act = a.dataset.ba;
+    if (act === 'x') { sel.clear(); paintVerses(); }
+    else if (act === 'hl') {
+      const col = a.dataset.c, all = ns.every(n => bhl[vkey(id, c, n)] === col);
+      ns.forEach(n => { const k = vkey(id, c, n); if (all) delete bhl[k]; else bhl[k] = col; });
+      LS.s('bhl', bhl); sel.clear(); paintVerses(); toast(all ? 'Highlight removed' : 'Highlighted');
+    }
+    else if (act === 'note') { if (ns.length !== 1) toast('Select one verse to add a note'); else openNote(ns[0]); }
+    else if (act === 'share') bCopy(true);
+    else if (act === 'copy') bCopy(false);
+    else if (act === 'clear') {
+      const has = ns.filter(n => bhl[vkey(id, c, n)] || bnotes[vkey(id, c, n)]);
+      if (!has.length) { toast('Nothing to clear'); return; }
+      if (has.some(n => bnotes[vkey(id, c, n)]) && !confirm('Clear the highlight and note from the selected verse' + (has.length > 1 ? 's' : '') + '?')) return;
+      has.forEach(n => { const k = vkey(id, c, n); delete bhl[k]; delete bnotes[k]; });
+      LS.s('bhl', bhl); LS.s('bnotes', bnotes); sel.clear(); paintVerses(); toast('Cleared');
+    }
+    return;
+  }
+  const card = e.target.closest('.bvc');
+  if (card && card.closest('#bv')) { const n = +card.dataset.v; bctx.sel.has(n) ? bctx.sel.delete(n) : bctx.sel.add(n); paintVerses(); const again = $(`.bvc[data-v="${n}"]`); if (again) again.focus({ preventScroll: true }); }
+});
+document.addEventListener('keydown', e => {
+  const card = e.target.closest && e.target.closest('.bvc');
+  if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); card.click(); }
+});
 function loadChapter(id, c, lang) {
   const tok = ++btok, box = $('#bv'); if (!box) return;
   bookData(lang, id).then(ch => {
     if (tok !== btok || !$('#bv')) return;
     const vs = ch[c - 1];
-    box.innerHTML = vs && vs.length ? vs.map((t, i) => t ? `<p><sup>${i + 1}</sup>${esc(t)}</p>` : '').join('') : '<div class="bmsg">This chapter is not available.</div>';
-  }).catch(() => { if (tok === btok && $('#bv')) $('#bv').innerHTML = `<div class="bmsg">${navigator.onLine ? 'Could not load this book.' : 'Offline. Open this book once while online to save it.'}</div>`; });
+    if (vs && vs.length) { bctx = { id, c, lang, vs, sel: new Set() }; paintVerses(); }
+    else { bctx = null; box.innerHTML = '<div class="bmsg">This chapter is not available.</div>'; updateBar(); }
+  }).catch(() => { if (tok === btok && $('#bv')) { bctx = null; updateBar(); $('#bv').innerHTML = `<div class="bmsg">${navigator.onLine ? 'Could not load this book.' : 'Offline. Open this book once while online to save it.'}</div>`; } });
 }
 
 /* ---------- views ---------- */
@@ -253,7 +337,7 @@ ${w ? weekHtml(w, true, true) : empty('♪', 'No Sunday list yet', 'Open the Son
     });
     return `<div class="rh"><a class="ib" href="#/bible/${id}" aria-label="Chapters">←</a><div class="t"><h1 id="bt">${esc(bName(b, lang))} ${n}</h1></div></div>
 <div class="tabs" role="tablist"><button data-bl="te" role="tab" class="${lang === 'te' ? 'on' : ''}">తెలుగు</button><button data-bl="en" role="tab" class="${lang === 'en' ? 'on' : ''}">English</button></div>
-<div class="bv" id="bv"><div class="bmsg">Loading…</div></div>${bibleNav(id, n)}`;
+<div class="bv" id="bv"><div class="bmsg">Loading…</div></div><div class="bbar" id="bbar" hidden></div>${bibleNav(id, n)}`;
   },
   song(id) {
     const s = by[id];
@@ -304,6 +388,7 @@ document.addEventListener('click', e => {
 function render() {
   const [, r = '', id, id2] = location.hash.slice(1).split('/');
   const name = r || 'home';
+  bctx = null; document.querySelectorAll('.bsheet').forEach(x => x.remove());
   const v = views[name] || views.home;
   main.style.animation = 'none'; main.offsetHeight; main.style.animation = '';
   main.innerHTML = v(id ? decodeURIComponent(id) : undefined, id2 ? decodeURIComponent(id2) : undefined);
