@@ -16,3 +16,38 @@
 .bv p{margin:0 0 .55em}
 .bv sup{color:var(--ac);font-family:var(--sans);font-size:.55em;font-weight:700;margin-right:.45em;vertical-align:.5em}
 .bmsg{text-align:center;color:var(--mut);padding:40px 0}
+
+/* ===== Bible verse cards, highlight, notes, share ===== */
+.bvc{display:flex;gap:14px;align-items:flex-start;margin:0 0 10px;padding:14px 16px;border:1px solid var(--bd);border-radius:18px;background:var(--card);cursor:pointer;transition:border-color .2s,box-shadow .2s,background .2s}
+.bvc:hover{border-color:color-mix(in srgb,var(--ac) 55%,transparent)}
+.bvc.sel{border-color:var(--ac);box-shadow:0 0 0 2px color-mix(in srgb,var(--ac) 35%,transparent)}
+.bvn{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--ac);color:var(--on,#0a0907);font:700 13px var(--sans);margin-top:.15em}
+.bvt{flex:1;min-width:0;overflow-wrap:anywhere}
+.bvc p{margin:0}
+.bvc.h-y{background:rgba(250,204,21,.16);border-color:rgba(250,204,21,.5)}
+.bvc.h-g{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.45)}
+.bvc.h-b{background:rgba(96,165,250,.16);border-color:rgba(96,165,250,.5)}
+.bvc.h-p{background:rgba(244,114,182,.15);border-color:rgba(244,114,182,.5)}
+.bvc.sel.h-y,.bvc.sel.h-g,.bvc.sel.h-b,.bvc.sel.h-p{border-color:var(--ac)}
+.bnote{margin-top:10px;padding:9px 12px;border-left:3px solid var(--ac);border-radius:4px 12px 12px 4px;background:color-mix(in srgb,var(--ac) 10%,transparent);font:.68em/1.5 var(--sans);color:var(--tx);white-space:pre-wrap}
+.bnote span{color:var(--ac)}
+.bbar{position:fixed;z-index:40;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;padding:10px 12px 12px;border:1px solid var(--bd);border-radius:20px;background:var(--bg2);box-shadow:0 20px 50px -20px #000;display:flex;flex-direction:column;gap:8px;animation:in .2s}
+@media(min-width:900px){.bbar{left:200px;right:0;bottom:20px}}
+.bb-t{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bb-t b{font-family:var(--serif);font-size:16px;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bb-t button{width:34px;height:34px;border-radius:50%;color:var(--mut)}
+.bb-r{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.bb-r>button{padding:9px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);font-size:14px}
+.bb-r>button:hover{border-color:var(--ac)}
+.bb-c{display:flex;gap:8px;margin-right:4px}
+.hlc{width:30px;height:30px;border-radius:50%;border:2px solid var(--bd)}
+.hlc.c-y{background:#facc15}.hlc.c-g{background:#4ade80}.hlc.c-b{background:#60a5fa}.hlc.c-p{background:#f472b6}
+.hlc:active{transform:scale(.9)}
+.bsheet{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 0 env(safe-area-inset-bottom)}
+.bs-in{width:100%;max-width:520px;display:flex;flex-direction:column;gap:12px;padding:18px 18px 20px;border:1px solid var(--bd);border-radius:24px 24px 0 0;background:var(--bg2);animation:pg .25s both}
+.bs-in b{font-family:var(--serif);font-size:19px;color:var(--ac)}
+.bs-in textarea{width:100%;min-height:130px;resize:vertical;padding:12px 14px;border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);font:inherit;font-size:16px;line-height:1.5;outline:0}
+.bs-in textarea:focus{border-color:var(--ac)}
+.bs-a{display:flex;justify-content:flex-end;gap:8px}
+.bs-a button{padding:11px 18px;border:1px solid var(--bd);border-radius:12px;font-size:15px}
+.bs-a .pri{background:var(--ac);border-color:var(--ac);color:var(--on,#0a0907);font-weight:700}
