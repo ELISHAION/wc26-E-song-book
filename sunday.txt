@@ -18,44 +18,20 @@
 
 date: 2026-11-22
 series: 
-sermon: శ్రమలు దేవుని చిత్తానికి రుజువు
-subheading: పోరాటాలు దేవుని ప్రణాళికకు సంకేతం
-speaker: Ps. Jessy Paul Gaaru
-scripture: Romans 8:28
+sermon: 
+subheading:
+speaker: Ps. Raj Prakash Paul Gaaru
+scripture: 
 image: none
 youtube:
-summary: Trials are not a sign that God has left us. They are a sign that His process of shaping us has begun.
-
-The enemy wants us to give up prayer and God's Word when we are discouraged.
-verses:
-- John 16:33 - In the world ye shall have tribulation: but be of good cheer; I have overcome the world.
-- Romans 8:28 - And we know that all things work together for good to them that love God, to them who are the called according to his purpose.
-section: 1. Increased Attacks / Spiritual Opposition
-- The enemy comes to tempt us, to sift our heart and our family.
-- The enemy targets those who have surrendered their lives to Jesus.
-- When we are chosen for God, we become partakers in suffering.
-section: 2. Testing Character and Refining
-- God allows hardship to test our faith and patience.
-- Joseph went through loneliness and betrayal, yet he did not lose hope.
-- God is testing our character. He is purifying you like gold.
-note: If you need the power of God, you need to go through the loneliness.
-section: 3. Divine Separation and Isolation
-- Being set apart from the world for God's purpose.
-- Solitude is needed to know God's character and His will.
-- It is a growing and strengthening experience.
-section: 4. Development in Darkness
-A photo is developed in the darkroom. In the same way, God's truth is formed in us during dark seasons.
-verse: Psalm 139:12 - Yea, the darkness hideth not from thee; but the night shineth as the day.
-section: 5. An Expiry Date on Suffering
-- Every trial has a time limit set by God.
-- This spiritual battle will end, and God will restore and bless us.
-conclusion: Conclusion
-- Guard your faith and your faithfulness during trials.
-- Do not despair in the dark and lonely season. God is preparing you.
-points:
-- Trials are proof that we are in God's will
-- God shapes us in the dark
-- Every trial has an expiry date
+summary: 
 songs:
 - Sthothram Chellinthumu
-- 
+- Devaa Nee Sannidhi
+- Enno Poratamulu
+- Yesu Ane Oka Naamamundhi
+- Jai Jai Yesu Raajaa
+- Sthuthiyinchedaa Nee Naamam
+- Edainaa Emainaa Aadhaaram Neevegaa
+- Deva Naa Yessaya
+-
