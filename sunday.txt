@@ -34,4 +34,5 @@ songs:
 - Sthuthiyinchedaa Nee Naamam
 - Edainaa Emainaa Aadhaaram Neevegaa
 - Deva Naa Yessaya
--
+- Brathikeda Nee Kosame
+- Aadharinchumayya
